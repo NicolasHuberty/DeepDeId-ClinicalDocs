@@ -1,21 +1,21 @@
 import argparse
 import pandas as pd
-from transformers import BertTokenizerFast, BertForTokenClassification
+from transformers import BertTokenizerFast, BertForTokenClassification,AutoTokenizer, RobertaForTokenClassification,RobertaTokenizerFast
 from models import tokenize_and_encode_labels
-from utils import readFormattedFile, CustomDataset, plot_performance_metrics, evaluate_model,plot_f1_recall_precision,plt_fp_fn,plot_global_metrics,plot_label_distribution, complete_plot,plot_gpt
-import os
+from utils import readFormattedFile, CustomDataset, evaluate_model
+
 # Retrieve all arguments
 parser = argparse.ArgumentParser(description='Evaluate a model')
-parser.add_argument('--eval_set', type=str, default="n2c2/test_groundtruth.tsv", help='Path to the validation set')
+parser.add_argument('--eval_set', type=str, default="n2c2_2014/training3.tsv", help='Path to the validation set')
 parser.add_argument('--batch_size', type=int, default=4, help='Testing batch size')
-parser.add_argument('--mapping',type=str, default="None", help="None for no mapping, name of the file otherwise")
-parser.add_argument('--model_name', type=str, default="bert-n2c2-mapping_None-epochs_1", help='Path to the validation set')
+parser.add_argument('--mapping',type=str, default="n2c2_removeBIO", help="None for no mapping, name of the file otherwise")
+parser.add_argument('--model_name', type=str, default="roberta-n2c2_2014n2c2_2014_-mapping_n2c2_removeBIO-epochs_5-batch_size_4", help='Path to the validation set')
 args = parser.parse_args()
 
 # Define model and tokenizer for the evaluation
 print(f"Load model: {args.model_name} and tokenizer...")
-model = BertForTokenClassification.from_pretrained(f"./model_save/{args.model_name}")
-tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
+tokenizer = RobertaTokenizerFast.from_pretrained("Jean-Baptiste/roberta-large-ner-english")
+model = RobertaForTokenClassification.from_pretrained(f"./model_save/{args.model_name}")
 
 # Process the evaluation set
 eval_tokens, eval_labels, unique_labels = readFormattedFile(args.eval_set,mapping=args.mapping)
@@ -43,6 +43,3 @@ df_metrics = pd.DataFrame({
 # Save results
 df_metrics.index = [label for _, label in sorted(model.config.id2label.items())]
 df_metrics.to_csv(f"./results/{model.config.name}.csv", index_label='Label ID')
-
-# Plot the results
-complete_plot(metrics,[label for _, label in sorted(model.config.id2label.items())],model.config.name)

@@ -35,7 +35,8 @@ def readFormattedFile(file_path, mapping="None"):
 
     if mapping != "None":
         print(f"Launch te mapping of the labels with {mapping}")
-        labels  = [[load_mapping(mapping).get(label, 'O') for label in sentence_labels] for sentence_labels in labels]
+        mapping_dict = load_mapping(mapping)
+        labels = [[mapping_dict.get(label, 'O') for label in sentence_labels] for sentence_labels in labels]
         unique_labels = set(chain.from_iterable(labels))
 
     return texts, labels, list(unique_labels)

@@ -1,11 +1,19 @@
-from sklearn.metrics import confusion_matrix,precision_recall_fscore_support,precision_score, recall_score, f1_score
+from sklearn.metrics import precision_recall_fscore_support
 import numpy as np
 from transformers import EvalPrediction
+
+
 def compute_metrics(p: EvalPrediction):
+    """ Function called in the evaluation of the trainer
+    Args:
+        p (EvalPrediction): the trainer parameter
+    Returns:
+        dict: precision, recall and f1 for each label
+    """
     predictions = np.argmax(p.predictions, axis=2)
     true_labels = p.label_ids
 
-    # Filter out the ignored token predictions (e.g., -100 used for padding in some models)
+    # Filter out the ignored token predictions
     true_predictions = [
         [p for p, l in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, true_labels)
@@ -23,7 +31,6 @@ def compute_metrics(p: EvalPrediction):
     precision, recall, f1, _ = precision_recall_fscore_support(
         true_labels, true_predictions, average=None, labels=np.unique(true_labels)
     )
-
     # Structure results in a dictionary
     label_metrics = {}
     for label_index, label in enumerate(np.unique(true_labels)):

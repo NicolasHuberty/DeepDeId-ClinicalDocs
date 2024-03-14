@@ -1,4 +1,6 @@
 datasets/
 *.pyc
 .trainingLogs
-model_save
+models_save/
+docs
+results/

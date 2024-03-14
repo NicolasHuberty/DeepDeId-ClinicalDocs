@@ -28,7 +28,7 @@ def evaluate_model(model, eval_dataset, device='cuda', tokenizer=None):
     # Create a DataLoader to process the evaluation dataset
     eval_loader = DataLoader(eval_dataset, batch_size=4, shuffle=False)
 
-    all_predictions, all_true_labels = [], []
+    all_predictions, all_true_labels, all_pred_labels_sequences  = [], [], []
     mismatched_tokens_info = []  # All badly predicted labels
 
     for batch in tqdm(eval_loader, desc="Evaluating the model"):
@@ -37,11 +37,13 @@ def evaluate_model(model, eval_dataset, device='cuda', tokenizer=None):
         with torch.no_grad():
             outputs = model(**inputs)
         
-        logits = outputs.logits
+        logits = outputs["logits"]
         batch_predictions = torch.argmax(logits, dim=-1)
         all_predictions.append(batch_predictions.cpu().numpy())
         all_true_labels.append(labels.cpu().numpy())
-
+        for prediction_sequence in batch_predictions.cpu().numpy():
+            pred_labels = [id2label[pred] for pred in prediction_sequence]
+            all_pred_labels_sequences.append(pred_labels)
         # Detect mismatched labels
         input_ids = inputs['input_ids'].cpu().numpy()
         for input_id, prediction, true_label in zip(input_ids, batch_predictions.cpu().numpy(), labels.cpu().numpy()):
@@ -81,7 +83,8 @@ def evaluate_model(model, eval_dataset, device='cuda', tokenizer=None):
         'FN': FN,
         'TN': TN,
         'support_per_label': support_per_label,
-        'mismatched_tokens_info': mismatched_tokens_info
+        'mismatched_tokens_info': mismatched_tokens_info,
+        'predicted_labels_sequences' : all_pred_labels_sequences
     }
 
     return metrics

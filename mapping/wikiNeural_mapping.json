@@ -1,0 +1,10 @@
+{
+    "I-PER": "PERSON",
+    "B-PER": "PERSON",
+    "I-LOC": "LOCATION",
+    "B-LOC": "LOCATION",
+    "B-MISC": "MISC",
+    "I-MISC": "MISC",
+    "B-ORG": "ORG",
+    "I-ORG": "ORG"
+}

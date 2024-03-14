@@ -4,7 +4,7 @@ from transformers import BertTokenizerFast, BertForTokenClassification
 from utils import plot_f1_recall_precision, plt_fp_fn, plot_global_metrics, plot_label_distribution, complete_plot,plot_f1
 
 parser = argparse.ArgumentParser(description='Plot model performances from CSV')
-parser.add_argument('--model_name', type=str,default="bert-n2c2_2014n2c2_2014-mapping_None-epochs_5" , help='Name of the model for label retrieval and plotting')
+parser.add_argument('--model_name', type=str,default="pubMedBERT-n2c2_2014n2c2_2014-mapping_n2c2_removeBIO-epochs_5-batch_size_4" , help='Name of the model for label retrieval and plotting')
 args = parser.parse_args()
 
 
