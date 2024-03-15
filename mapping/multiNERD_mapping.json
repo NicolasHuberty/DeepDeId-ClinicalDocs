@@ -1,8 +1,0 @@
-{
-    "I-PER": "PERSON",
-    "B-PER": "PERSON",
-    "I-LOC": "LOCATION",
-    "B-LOC": "LOCATION",
-    "B-TIME": "DATE",
-    "I-TIME": "DATE"
-}
