@@ -25,3 +25,6 @@ class CustomDataset(torch.utils.data.Dataset):
         if self.labels is not None:
             item["labels"] = self.labels[idx]
         return item
+
+    def __len__(self):
+        return len(self.labels)
