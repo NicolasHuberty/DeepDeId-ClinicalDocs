@@ -10,10 +10,8 @@ def tokenize_and_encode_labels(labels, tokens, label2id):
         list of list of int: Encoded labels adjusted for sub-tokens and special tokens.
     """
 
-    # Convert labels to their corresponding IDs
     simplified_labels = [[label2id.get(label, label2id['O']) for label in doc] for doc in labels]
     encoded_labels = []
-    #Iterate over each document's labels
     for i, label in enumerate(simplified_labels):
         word_ids = tokens.word_ids(batch_index=i)  # Get word id for each token
         previous_word_idx = None

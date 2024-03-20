@@ -1,45 +1,103 @@
+
+
+
+
+import sys
+from pathlib import Path
 import argparse
-import pandas as pd
-from transformers import BertTokenizerFast, BertForTokenClassification,AutoTokenizer, RobertaForTokenClassification,RobertaTokenizerFast
-from models import tokenize_and_encode_labels
-from utils import readFormattedFile, CustomDataset, evaluate_model
+import os, shutil
+import numpy as np
+import json
+import sqlite3
+from tqdm import tqdm
+from sklearn.model_selection import train_test_split
+import torch
+from transformers import Trainer, TrainingArguments, RobertaTokenizerFast,  BertTokenizerFast, BertForTokenClassification
+from torch.utils.data import Dataset, DataLoader
+# Add root path to system path
+root_path = Path(__file__).resolve().parents[1]
+sys.path.append(str(root_path))
+from sklearn.metrics import classification_report
+from utils import CustomDataset, evaluate_model,TextDataset,load_records_manual_process,store_predicted_labels, load_config_field,save_config_field
+from models import tokenize_and_encode_labels, RobertaCustomForTokenClassification
+import logging
+from src import predict_and_align
+from load_dataset import load_txt_dataset,load_dataset
+from datetime import datetime
 
-# Retrieve all arguments
-parser = argparse.ArgumentParser(description='Evaluate a model')
-parser.add_argument('--eval_set', type=str, default="n2c2_2014/training3.tsv", help='Path to the validation set')
-parser.add_argument('--batch_size', type=int, default=4, help='Testing batch size')
-parser.add_argument('--mapping',type=str, default="n2c2_removeBIO", help="None for no mapping, name of the file otherwise")
-parser.add_argument('--model_name', type=str, default="roberta-n2c2_2014n2c2_2014_-mapping_n2c2_removeBIO-epochs_5-batch_size_4", help='Path to the validation set')
-args = parser.parse_args()
+# Remove TensorFlow logging
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+from torch.nn.functional import softmax
 
-# Define model and tokenizer for the evaluation
-print(f"Load model: {args.model_name} and tokenizer...")
-tokenizer = RobertaTokenizerFast.from_pretrained("Jean-Baptiste/roberta-large-ner-english")
-model = RobertaForTokenClassification.from_pretrained(f"./model_save/{args.model_name}")
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='DeIdentification of clinical documents using deep learning')
+    parser.add_argument("--project_name", type=str, default="customProject", help="Name of the Project")
+    parser.add_argument("--num_evals", type=int, default=100, help="Number of records to eval")
+    args = parser.parse_args()
+    return args
 
-# Process the evaluation set
-eval_tokens, eval_labels, unique_labels = readFormattedFile(args.eval_set,mapping=args.mapping)
-print(f"Process {args.eval_set} with mapping {args.mapping} \n Retrieved Labels: {unique_labels} and model labels: {model.config.label2id}")
+def evaluate_performance(model, tokenizer, texts_eval, labels_eval, label2id, id2label):
+    predictions, true_labels = [], []
+    for text, labels in zip(texts_eval, labels_eval):
+        aligned_predicted_labels = predict_and_align(model, tokenizer, text, label2id, id2label)
+        predictions.extend([label2id[label] for label in aligned_predicted_labels])
+        true_labels.extend([label2id[label] for label in labels])
+    return(classification_report(true_labels, predictions, target_names=list(label2id.keys())))
 
-# Tokenize, encode and create evaluation dataset
-tokenized_val_inputs = tokenizer(eval_tokens, padding=True, truncation=True, is_split_into_words=True, return_tensors="pt")
-encoded_val_labels = tokenize_and_encode_labels(eval_labels, tokenized_val_inputs,model.config.label2id)
-eval_dataset = CustomDataset(tokenized_val_inputs, encoded_val_labels)
+def evaluate_model(project_name,records,labels):
+    num_labels = len(load_config_field(project_name,"labels"))
+    label2id = load_config_field(project_name,"label2id")
+    id2label = load_config_field(project_name,"id2label")
+    model_path = load_config_field(project_name,"model_path")
+    tokenizer_path = load_config_field(project_name,"tokenizer_path")        
+    tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
+    model = BertForTokenClassification.from_pretrained(model_path, num_labels=num_labels)  
+    evaluation = evaluate_performance(model,tokenizer,records,labels,label2id,id2label)  
+    print(evaluation)
+    return json.dumps(evaluation)
 
-# Launch the evaluation
-print(f"Launch evaluation...")
-metrics = evaluate_model(model, eval_dataset, 'cuda',tokenizer)
-# Format performances to be fit in csv file
-df_metrics = pd.DataFrame({
-    'Support': pd.Series(metrics['support_per_label']),
-    'True Positives': pd.Series(metrics['TP']),
-    'False Positives': pd.Series(metrics['FP']),
-    'False Negatives': pd.Series(metrics['FN']),
-    'True Negatives': pd.Series(metrics['TN']),
-    'Precision': pd.Series(metrics['precision_per_label']),
-    'Recall': pd.Series(metrics['recall_per_label']),
-    'F1 Score': pd.Series(metrics['f1_per_label']),
-})
-# Save results
-df_metrics.index = [label for _, label in sorted(model.config.id2label.items())]
-df_metrics.to_csv(f"./results/{model.config.name}.csv", index_label='Label ID')
+def main():
+    args = parse_arguments()
+    project_name = args.project_name
+    texts,manual_labels,predicted_labels,_ = load_records_manual_process(project_name,1)
+    original_size = len(texts)
+    print(f"Size of extracted texts: {len(texts)}")
+    last_train = load_config_field(project_name,"lastProjectTrain")
+    print(f"Start at pos {last_train} and end at {len(texts)}")
+    texts_train, texts_eval, manual_labels_train, manual_labels_eval = train_test_split(texts, manual_labels, test_size=0.2, random_state=42)
+
+    labels = load_config_field(project_name,"labels")
+    label2id = load_config_field(project_name,"label2id")
+    id2label = load_config_field(project_name,"id2label")
+    save_config_field(project_name,"lastProjectTrain",original_size)
+    
+    model_path = load_config_field(project_name,"model_path")
+    tokenizer_path = load_config_field(project_name,"tokenizer_path")
+    if (model_path != None) and (tokenizer_path != None):
+        #tokenizer = RobertaTokenizerFast.from_pretrained("Jean-Baptiste/roberta-large-ner-english")
+        #model = RobertaCustomForTokenClassification(num_labels=len(labels))
+        tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
+        model = BertForTokenClassification.from_pretrained(model_path, num_labels=len(labels))
+    else:
+        print(f"Num of labels: {len(labels)}")
+        tokenizer = BertTokenizerFast.from_pretrained("bert-base-multilingual-cased")
+        model = BertForTokenClassification.from_pretrained("bert-base-multilingual-cased", num_labels=len(labels))
+   
+    # Tokenize and encode labels for both training and evaluation datasets
+    tokenized_inputs_train = tokenizer(texts_train, max_length=512, padding="max_length", truncation=True, is_split_into_words=True, return_offsets_mapping=True, return_tensors="pt")
+    encoded_labels_train = tokenize_and_encode_labels(manual_labels_train, tokenized_inputs_train, label2id)
+
+    tokenized_inputs_eval = tokenizer(texts_eval, max_length=512, padding="max_length", truncation=True, is_split_into_words=True, return_offsets_mapping=True, return_tensors="pt")
+    encoded_labels_eval = tokenize_and_encode_labels(manual_labels_eval, tokenized_inputs_eval, label2id)
+    
+    train_dataset = CustomDataset(tokenized_inputs_train, encoded_labels_train)
+    eval_dataset = CustomDataset(tokenized_inputs_eval, encoded_labels_eval)
+
+
+
+
+if __name__ == '__main__':
+    main()
+
+

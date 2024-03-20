@@ -1,6 +1,10 @@
-import sqlite3
+import sys
+from pathlib import Path
 import argparse
-
+import sqlite3
+root_path = Path(__file__).resolve().parents[1]
+sys.path.append(str(root_path))
+from utils import save_config_field
 
 def parse_arguments():
     """Parse command line arguments."""
@@ -25,6 +29,7 @@ def fake_manual_annotation(project_name, x):
     conn.commit()
     conn.close()
     print(f"Updated manual_process for the first {x} records.")
+    save_config_field(project_name,"manual_annotations",x)
 
 def main():
     args = parse_arguments()

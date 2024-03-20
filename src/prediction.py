@@ -6,7 +6,6 @@ import numpy as np
 import json
 import sqlite3
 from tqdm import tqdm
-from sklearn.model_selection import train_test_split
 import torch
 from transformers import Trainer, TrainingArguments, RobertaTokenizerFast,  BertTokenizerFast, BertForTokenClassification
 from torch.utils.data import Dataset, DataLoader
@@ -32,7 +31,7 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
-def predict_and_align(model, tokenizer, eval_text, label2id, id2label):
+def predict_and_align(model, tokenizer, eval_text, id2label):
     """
     Evaluate the model on a document (eval_text), predict labels for each token,
     and align these predictions with the original text tokens. Handles long texts by automatically
@@ -95,63 +94,47 @@ def predict_and_align(model, tokenizer, eval_text, label2id, id2label):
 
     return aligned_labels
 
-def train_model(project_name,records,manual_labels,new_training_size):
+def make_prediction(project_name,unknown_records,start_to_predict,number_of_predictions=100):
     labels = load_config_field(project_name,"labels")
-    label2id = load_config_field(project_name,"label2id")
-    save_config_field(project_name,"lastProjectTrain",new_training_size)
-    
+    id2label = load_config_field(project_name,"id2label")
     model_path = load_config_field(project_name,"model_path")
-    tokenizer_path = load_config_field(project_name,"tokenizer_path")
-    if (model_path != None) and (tokenizer_path != None):
-        #tokenizer = RobertaTokenizerFast.from_pretrained("Jean-Baptiste/roberta-large-ner-english")
-        #model = RobertaCustomForTokenClassification(num_labels=len(labels))
-        tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
-        model = BertForTokenClassification.from_pretrained(model_path, num_labels=len(labels))
-    else:
-        tokenizer = BertTokenizerFast.from_pretrained("bert-base-multilingual-cased")
-        model = BertForTokenClassification.from_pretrained("bert-base-multilingual-cased", num_labels=len(labels))
-   
-    # Tokenize and encode labels for both training and evaluation datasets
-    tokenized_inputs_train = tokenizer(records, max_length=512, padding="max_length", truncation=True, is_split_into_words=True, return_offsets_mapping=True, return_tensors="pt")
-    encoded_labels_train = tokenize_and_encode_labels(manual_labels, tokenized_inputs_train, label2id)
-    print(f"Number of training data:{len(records)}")
-    train_dataset = CustomDataset(tokenized_inputs_train, encoded_labels_train)
-    training_args = TrainingArguments(
-        save_strategy="no",
-        output_dir="./.trainingLogs",
-        num_train_epochs=5,
-        per_device_train_batch_size=4,
-    )
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset
-    )
-    print(f"Launch the training...")
-    trainer.train()
-    date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    model_name = f"projects/{project_name}/modelSave-{date}"
-    tokenizer_name = f"projects/{project_name}/tokenizerSave-{date}"
-    trainer.save_model(model_name)
-    tokenizer.save_pretrained(tokenizer_name)
-    save_config_field(project_name,"model_path",model_name)
-    save_config_field(project_name, "tokenizer_path", tokenizer_name)
-
-
-
+    tokenizer_path = load_config_field(project_name,"tokenizer_path")  
+    tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
+    model = BertForTokenClassification.from_pretrained(model_path, num_labels=len(labels))
+    all_aligned_predicted_labels = []
+    for i, text in enumerate(unknown_records):
+            aligned_predicted_labels = predict_and_align(model, tokenizer, text, id2label)
+            if(len(text) != len(aligned_predicted_labels)):
+                print(f"Record {i} size misamatched: \n {len(text)} \n")
+            all_aligned_predicted_labels.append(aligned_predicted_labels)
+    predicted_records_ids = np.arange(start_to_predict,start_to_predict+number_of_predictions,1)
+    print(f"Add prediction to records {predicted_records_ids}")
+    store_predicted_labels(project_name,predicted_records_ids,all_aligned_predicted_labels)
+    
 def main():
     args = parse_arguments()
     project_name = args.project_name
-    texts,manual_labels,predicted_labels,_ = load_records_manual_process(project_name,1)
-
-    new_training_size = len(texts)
+    labels = load_config_field(project_name,"labels")
+    label2id = load_config_field(project_name,"label2id")
+    id2label = load_config_field(project_name,"id2label")
     last_train = load_config_field(project_name,"lastProjectTrain")
-    texts = texts[last_train:]
-    manual_labels = manual_labels[last_train:]
-    texts_train, texts_eval, manual_labels_train, manual_labels_eval = train_test_split(texts, manual_labels, test_size=0.2, random_state=42)
-    print(f"Size of training documents: {len(texts)} Starting at pos: {last_train} and end at {new_training_size}")
-    train_model(project_name,texts_train,manual_labels_train,new_training_size)
+    model_path = load_config_field(project_name,"model_path")
+    tokenizer_path = load_config_field(project_name,"tokenizer_path")
+    tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
+    model = BertForTokenClassification.from_pretrained(model_path, num_labels=len(labels))
+    eval_texts,_,_,_ = load_records_manual_process(project_name,0)
+    eval_texts = eval_texts[0:args.num_evals]
+    print(f"Number of eval texts: {len(eval_texts)}")
+    all_aligned_predicted_labels = []
+    for i, text in enumerate(eval_texts):
+            aligned_predicted_labels = predict_and_align(model, tokenizer, text, label2id, id2label)
+            if(len(text) != len(aligned_predicted_labels)):
+                print(f"Record {i} size misamatched: \n {len(text)} \n")
+            all_aligned_predicted_labels.append(aligned_predicted_labels)
 
+    records_ids = np.arange(last_train+1,last_train+1+len(eval_texts),1)
+    store_predicted_labels(project_name,records_ids,all_aligned_predicted_labels)
+    #evaluate_performance(model, tokenizer, last_train, last_train, label2id, id2label)
 if __name__ == '__main__':
     main()
 

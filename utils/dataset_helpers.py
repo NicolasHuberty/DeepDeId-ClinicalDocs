@@ -5,14 +5,9 @@ def load_config_field(project_name, field):
     with open(f"projects/{project_name}/config_project.json", 'r') as file:
         json_data = json.load(file)
     # Retrieve the value of the specified field from the json data
-    field_value = json_data.get(field, None)  # Returns None if the field does not exist
+    field_value = json_data.get(field, None)
     return field_value
 
-def generate_label_colors(project_name):
-    labels = load_config_field(project_name, 'labels')
-    label_colors = {label: "#{:06x}".format(random.randint(0, 0xFFFFFF)) for label in labels if label != "O"}
-    label_colors["O"] = "#FFFFFF" 
-    return label_colors
 
 def save_config_field(project_name, field, new_value):
     config_file_path = f"projects/{project_name}/config_project.json"
@@ -44,6 +39,33 @@ def load_records_manual_process(project_name,manual_process=1):
         manual_process_flags.append(True)  
     return texts, manual_labels_list, predicted_labels_list, manual_process_flags
 
+def load_records_eval_set(project_name, eval_set=1, from_record=0, to_record=1):
+    conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
+    c = conn.cursor()
+    
+    query = '''SELECT id, text, manual_labels, predicted_labels, manual_process 
+               FROM records 
+               WHERE eval_record = ? 
+               AND id >= ? AND id <= ?'''
+    params = [eval_set, from_record,to_record]
+    c.execute(query, params)
+    records = c.fetchall()
+    conn.close()
+    texts = []
+    manual_labels_list = []
+    predicted_labels_list = []
+    manual_process_flags = []
+    for record in records:
+        _, text_str, manual_labels_str, predicted_labels_str, _ = record
+        text = text_str.split(' ')
+        manual_labels = list(manual_labels_str.split(','))
+        predicted_labels = list(predicted_labels_str.split(','))
+        texts.append(text)
+        manual_labels_list.append(manual_labels)
+        predicted_labels_list.append(predicted_labels)
+        manual_process_flags.append(True)
+    return texts, manual_labels_list, predicted_labels_list, manual_process_flags
+
 
 def store_record_with_labels(project_name,record_id, text, manual_labels, predicted_labels):
     conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
@@ -71,6 +93,16 @@ def store_predicted_labels(project_name,records_ids, predicted_labels):
             print(f"No record found with ID: {record_id}")
         else:
             c.execute('''UPDATE records SET predicted_labels = ? WHERE id = ?''', (predicted_labels_str, record_id))
+
+    conn.commit()
+    conn.close()
+    
+def store_eval_records(project_name, records_ids, evaluation_index):
+    conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
+    c = conn.cursor()    
+    for record_id, eval_flag in zip(records_ids, evaluation_index):
+        record_id = int(record_id)
+        c.execute('''UPDATE records SET eval_record = ? WHERE id = ?''', (eval_flag, record_id))
 
     conn.commit()
     conn.close()
