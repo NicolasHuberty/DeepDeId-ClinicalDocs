@@ -43,7 +43,7 @@ def evaluate_performance(model, tokenizer, texts_eval, labels_eval, label2id, id
         aligned_predicted_labels = predict_and_align(model, tokenizer, text, label2id, id2label)
         predictions.extend([label2id[label] for label in aligned_predicted_labels])
         true_labels.extend([label2id[label] for label in labels])
-    return(classification_report(true_labels, predictions, target_names=list(label2id.keys())))
+    return(classification_report(true_labels, predictions, target_names=list(label2id.keys()), output_dict=True))
 
 def evaluate_model(project_name,records,labels):
     num_labels = len(load_config_field(project_name,"labels"))
@@ -54,8 +54,8 @@ def evaluate_model(project_name,records,labels):
     tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
     model = BertForTokenClassification.from_pretrained(model_path, num_labels=num_labels)  
     evaluation = evaluate_performance(model,tokenizer,records,labels,label2id,id2label)  
-    print(evaluation)
-    return json.dumps(evaluation)
+    save_config_field(project_name,"performances",evaluation)
+    return evaluation
 
 def main():
     args = parse_arguments()

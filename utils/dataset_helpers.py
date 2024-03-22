@@ -38,6 +38,30 @@ def load_records_manual_process(project_name,manual_process=1):
         predicted_labels_list.append(predicted_labels)
         manual_process_flags.append(True)  
     return texts, manual_labels_list, predicted_labels_list, manual_process_flags
+import sqlite3
+
+def load_records_in_range(project_name, from_id, to_id):
+    conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
+    c = conn.cursor()
+    c.execute('''SELECT id, text, manual_labels, predicted_labels, manual_process 
+                 FROM records 
+                 WHERE id BETWEEN ? AND ?''', (from_id, to_id))
+    records = c.fetchall()
+    conn.close()
+    texts = []
+    manual_labels_list = []
+    predicted_labels_list = []
+    manual_process_flags = []
+    for record in records:
+        _, text_str, manual_labels_str, predicted_labels_str, manual_process = record
+        text = text_str.split(' ')
+        manual_labels = manual_labels_str.split(',')
+        predicted_labels = predicted_labels_str.split(',')
+        texts.append(text)
+        manual_labels_list.append(manual_labels)
+        predicted_labels_list.append(predicted_labels)
+        manual_process_flags.append(manual_process == 1)
+    return texts, manual_labels_list, predicted_labels_list, manual_process_flags
 
 def load_records_eval_set(project_name, eval_set=1, from_record=0, to_record=1):
     conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
@@ -96,6 +120,7 @@ def store_predicted_labels(project_name,records_ids, predicted_labels):
 
     conn.commit()
     conn.close()
+    print("Store done !")
     
 def store_eval_records(project_name, records_ids, evaluation_index):
     conn = sqlite3.connect(f'projects/{project_name}/dataset.db')

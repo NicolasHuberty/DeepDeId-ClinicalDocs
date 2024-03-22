@@ -136,7 +136,8 @@ def train_model(project_name,records,manual_labels,new_training_size):
     tokenizer.save_pretrained(tokenizer_name)
     save_config_field(project_name,"model_path",model_name)
     save_config_field(project_name, "tokenizer_path", tokenizer_name)
-
+    save_config_field(project_name,"lastProjectTrain",new_training_size)
+    return new_training_size
 
 
 def main():

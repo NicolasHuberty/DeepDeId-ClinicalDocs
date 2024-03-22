@@ -108,7 +108,7 @@ def make_prediction(project_name,unknown_records,start_to_predict,number_of_pred
                 print(f"Record {i} size misamatched: \n {len(text)} \n")
             all_aligned_predicted_labels.append(aligned_predicted_labels)
     predicted_records_ids = np.arange(start_to_predict,start_to_predict+number_of_predictions,1)
-    print(f"Add prediction to records {predicted_records_ids}")
+    print(f"Add prediction to records {predicted_records_ids} starting at record: {unknown_records[0]}") 
     store_predicted_labels(project_name,predicted_records_ids,all_aligned_predicted_labels)
     
 def main():
