@@ -69,9 +69,10 @@ def predict_and_align(model, tokenizer, eval_text, id2label):
         with torch.no_grad():
             outputs = model(input_ids, attention_mask=attention_mask)
         logits = outputs.logits
+        softmax_logits = softmax(logits,dim=-1)
         predictions = torch.argmax(logits, dim=-1)
         predictions = predictions.squeeze().tolist()
-
+        confidences = torch.max(softmax_logits,dim=-1).values
         # Align predictions with original text
         word_ids = word_ids_per_chunk[i]
         previous_word_idx = None
@@ -92,9 +93,9 @@ def predict_and_align(model, tokenizer, eval_text, id2label):
     seen = set()
     aligned_labels = [label for idx, label in sorted(set(all_predictions)) if not (idx in seen or seen.add(idx))]
 
-    return aligned_labels
+    return aligned_labels,confidences.mean().item()
 
-def make_prediction(project_name,unknown_records,start_to_predict,number_of_predictions=100):
+def make_prediction(project_name,unknown_records,unknown_ids,number_of_predictions=100):
     labels = load_config_field(project_name,"labels")
     id2label = load_config_field(project_name,"id2label")
     model_path = load_config_field(project_name,"model_path")
@@ -104,12 +105,12 @@ def make_prediction(project_name,unknown_records,start_to_predict,number_of_pred
     all_aligned_predicted_labels = []
     for i, text in enumerate(unknown_records):
             aligned_predicted_labels = predict_and_align(model, tokenizer, text, id2label)
-            if(len(text) != len(aligned_predicted_labels)):
+            if(len(text) != len(aligned_predicted_labels[0])):
                 print(f"Record {i} size misamatched: \n {len(text)} \n")
             all_aligned_predicted_labels.append(aligned_predicted_labels)
-    predicted_records_ids = np.arange(start_to_predict,start_to_predict+number_of_predictions,1)
-    print(f"Add prediction to records {predicted_records_ids} starting at record: {unknown_records[0]}") 
-    store_predicted_labels(project_name,predicted_records_ids,all_aligned_predicted_labels)
+    
+    print(f"Add prediction to records {unknown_ids} starting at record: {unknown_records[0]}") 
+    store_predicted_labels(project_name,unknown_ids,all_aligned_predicted_labels)
     
 def main():
     args = parse_arguments()
@@ -127,11 +128,11 @@ def main():
     print(f"Number of eval texts: {len(eval_texts)}")
     all_aligned_predicted_labels = []
     for i, text in enumerate(eval_texts):
-            aligned_predicted_labels = predict_and_align(model, tokenizer, text, label2id, id2label)
-            if(len(text) != len(aligned_predicted_labels)):
+            aligned_predicted_labels = predict_and_align(model, tokenizer, text, id2label)
+            if(len(text) != len(aligned_predicted_labels[0])):
                 print(f"Record {i} size misamatched: \n {len(text)} \n")
             all_aligned_predicted_labels.append(aligned_predicted_labels)
-
+    print(all_aligned_predicted_labels[0])
     records_ids = np.arange(last_train+1,last_train+1+len(eval_texts),1)
     store_predicted_labels(project_name,records_ids,all_aligned_predicted_labels)
     #evaluate_performance(model, tokenizer, last_train, last_train, label2id, id2label)

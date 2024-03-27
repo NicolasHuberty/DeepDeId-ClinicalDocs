@@ -41,10 +41,15 @@ def evaluate_performance(model, tokenizer, texts_eval, labels_eval, label2id, id
     predictions, true_labels = [], []
     for text, labels in zip(texts_eval, labels_eval):
         aligned_predicted_labels = predict_and_align(model, tokenizer, text, label2id, id2label)
-        predictions.extend([label2id[label] for label in aligned_predicted_labels])
-        true_labels.extend([label2id[label] for label in labels])
-    return(classification_report(true_labels, predictions, target_names=list(label2id.keys()), output_dict=True))
+        predictions.extend([label2id.get(label, -1) for label in aligned_predicted_labels])
+        true_labels.extend([label2id.get(label, -1) for label in labels])
+    unique_labels = sorted(set(true_labels + predictions))
+    present_label2id = {label: idx for label, idx in label2id.items() if idx in unique_labels}
+    labels = [label2id[label] for label in present_label2id.keys()]
+    target_names = [label for label in present_label2id.keys()]
 
+    # Now, we can safely call classification_report
+    return classification_report(true_labels, predictions, labels=labels, target_names=target_names, output_dict=True)
 def evaluate_model(project_name,records,labels):
     num_labels = len(load_config_field(project_name,"labels"))
     label2id = load_config_field(project_name,"label2id")

@@ -38,7 +38,6 @@ def load_records_manual_process(project_name,manual_process=1):
         predicted_labels_list.append(predicted_labels)
         manual_process_flags.append(True)  
     return texts, manual_labels_list, predicted_labels_list, manual_process_flags
-import sqlite3
 
 def load_records_in_range(project_name, from_id, to_id):
     conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
@@ -63,15 +62,52 @@ def load_records_in_range(project_name, from_id, to_id):
         manual_process_flags.append(manual_process == 1)
     return texts, manual_labels_list, predicted_labels_list, manual_process_flags
 
-def load_records_eval_set(project_name, eval_set=1, from_record=0, to_record=1):
-    conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
+def load_record_with_lowest_confidence(project_name):
+    conn = sqlite3.connect(f'./projects/{project_name}/dataset.db')
     c = conn.cursor()
     
-    query = '''SELECT id, text, manual_labels, predicted_labels, manual_process 
+    # First, try to select the record with the lowest confidence where manual_process = 0
+    c.execute('''SELECT id, text, manual_labels, predicted_labels, manual_process, confidence
+                 FROM records 
+                 WHERE confidence IS NOT NULL
+                 AND manual_process = 0
+                 ORDER BY confidence ASC
+                 LIMIT 1''')
+    record = c.fetchone()
+    
+    # If no record is found, fetch the first record where manual_process = 0 regardless of confidence
+    if not record:
+        c.execute('''SELECT id, text, manual_labels, predicted_labels, manual_process, confidence
+                     FROM records
+                     WHERE manual_process = 0
+                     ORDER BY id ASC
+                     LIMIT 1''')
+        record = c.fetchone()
+        
+    conn.close()
+    
+    if record:
+        id, text_str, manual_labels_str, predicted_labels_str, manual_process, confidence = record
+        text = text_str.split(' ')
+        manual_labels = manual_labels_str.split(',')
+        predicted_labels = predicted_labels_str.split(',')
+        return id, text, manual_labels, predicted_labels, confidence
+
+def load_records_eval_set(project_name, eval_set=1, manual_process=1):
+    conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
+    c = conn.cursor()
+    if(eval_set=="NULL"):
+        query = '''SELECT id, text, manual_labels, predicted_labels, manual_process 
+               FROM records 
+               WHERE eval_record IS NULL 
+               AND manual_process = ?'''
+        params = [manual_process]
+    else:
+        query = '''SELECT id, text, manual_labels, predicted_labels, manual_process 
                FROM records 
                WHERE eval_record = ? 
-               AND id >= ? AND id <= ?'''
-    params = [eval_set, from_record,to_record]
+               AND manual_process = ?'''
+        params = [eval_set, manual_process]
     c.execute(query, params)
     records = c.fetchall()
     conn.close()
@@ -79,17 +115,27 @@ def load_records_eval_set(project_name, eval_set=1, from_record=0, to_record=1):
     manual_labels_list = []
     predicted_labels_list = []
     manual_process_flags = []
+    ids = []
     for record in records:
-        _, text_str, manual_labels_str, predicted_labels_str, _ = record
+        id, text_str, manual_labels_str, predicted_labels_str, _ = record
         text = text_str.split(' ')
         manual_labels = list(manual_labels_str.split(','))
         predicted_labels = list(predicted_labels_str.split(','))
+        ids.append(id)
         texts.append(text)
         manual_labels_list.append(manual_labels)
         predicted_labels_list.append(predicted_labels)
         manual_process_flags.append(True)
-    return texts, manual_labels_list, predicted_labels_list, manual_process_flags
+    return ids, texts, manual_labels_list, predicted_labels_list, manual_process_flags
 
+def set_manual_labels(project_name, manual_process_value, record_ids_list):
+    conn = sqlite3.connect(f'./projects/{project_name}/dataset.db')
+    c = conn.cursor()
+    for record_id in record_ids_list:
+        c.execute('''UPDATE records SET manual_process = ? WHERE id = ?''', (manual_process_value, record_id))
+    conn.commit()
+    conn.close()
+    print(f"Updated manual_process for records with IDs: {record_ids_list}.")
 
 def store_record_with_labels(project_name,record_id, text, manual_labels, predicted_labels):
     conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
@@ -108,7 +154,8 @@ def store_predicted_labels(project_name,records_ids, predicted_labels):
     conn = sqlite3.connect(f'projects/{project_name}/dataset.db')
     c = conn.cursor()
     print(f"Size of records ids: {len(records_ids)} and size of predicted labels: {len(predicted_labels)}")
-    for record_id, labels in zip(records_ids, predicted_labels):
+    for record_id, predictions in zip(records_ids, predicted_labels):
+        labels, confidence = predictions
         record_id = int(record_id)
         predicted_labels_str = ','.join(map(str, labels))
         c.execute('''SELECT EXISTS(SELECT 1 FROM records WHERE id = ? LIMIT 1)''', (record_id,))
@@ -116,7 +163,7 @@ def store_predicted_labels(project_name,records_ids, predicted_labels):
         if not exists:
             print(f"No record found with ID: {record_id}")
         else:
-            c.execute('''UPDATE records SET predicted_labels = ? WHERE id = ?''', (predicted_labels_str, record_id))
+            c.execute('''UPDATE records SET predicted_labels = ?, confidence = ? WHERE id = ?''', (predicted_labels_str,confidence, record_id))
 
     conn.commit()
     conn.close()
@@ -128,6 +175,5 @@ def store_eval_records(project_name, records_ids, evaluation_index):
     for record_id, eval_flag in zip(records_ids, evaluation_index):
         record_id = int(record_id)
         c.execute('''UPDATE records SET eval_record = ? WHERE id = ?''', (eval_flag, record_id))
-
     conn.commit()
     conn.close()

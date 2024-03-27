@@ -110,7 +110,7 @@ def train_model(project_name,records,manual_labels,new_training_size):
     else:
         tokenizer = BertTokenizerFast.from_pretrained("bert-base-multilingual-cased")
         model = BertForTokenClassification.from_pretrained("bert-base-multilingual-cased", num_labels=len(labels))
-   
+    
     # Tokenize and encode labels for both training and evaluation datasets
     tokenized_inputs_train = tokenizer(records, max_length=512, padding="max_length", truncation=True, is_split_into_words=True, return_offsets_mapping=True, return_tensors="pt")
     encoded_labels_train = tokenize_and_encode_labels(manual_labels, tokenized_inputs_train, label2id)
@@ -132,6 +132,10 @@ def train_model(project_name,records,manual_labels,new_training_size):
     date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     model_name = f"projects/{project_name}/modelSave-{date}"
     tokenizer_name = f"projects/{project_name}/tokenizerSave-{date}"
+    # Remove previous model and tokenizer
+    if(model_path):
+        shutil.rmtree(model_path)
+        shutil.rmtree(tokenizer_path)
     trainer.save_model(model_name)
     tokenizer.save_pretrained(tokenizer_name)
     save_config_field(project_name,"model_path",model_name)
