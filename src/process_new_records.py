@@ -1,52 +1,50 @@
 import sys
 from pathlib import Path
-import json
-import numpy as np
-import sqlite3
 import argparse
-from sklearn.model_selection import train_test_split
+import random
 # Add root path to system path
 root_path = Path(__file__).resolve().parents[1]
 sys.path.append(str(root_path))
 sys.path.append("datasets")
-from utils import CustomDataset,TextDataset,load_records_manual_process,store_eval_records, load_config_field,save_config_field,should_allocate_to_evaluation,load_records_eval_set, load_records_in_range, set_manual_labels
+from utils import load_records_eval_set, load_config_field, save_config_field, manual_process
 from src import train_model, make_prediction,evaluate_model
 
 def parse_arguments():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='DeIdentification of clinical documents using deep learning')
-    parser.add_argument("--project_name", type=str, default="customProject", help="Name of the Project")
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Launch the automatic process of training, prediction and evaluation from a database")
+    parser.add_argument("--project_name", type=str, default="n2c2", help="Name of the Project")
     args = parser.parse_args()
     return args
 
-def process_new_records(project_name,new_predictions=100):
-    train_records_start = load_config_field(project_name,"lastProjectTrain")
-    train_records_end = load_config_field(project_name,"manual_annotations")
-    print(f"Process new records starting at pos {train_records_start} and ending at pos {train_records_end}")
-    
-
-    
-    train_ids, train_records, train_labels,_,_ = load_records_eval_set(project_name,"NULL",1)
-    print(f"Train ids: {train_ids}")
-    evaluation_index = should_allocate_to_evaluation(train_records,train_ids)
-    store_eval_records(project_name,train_ids,evaluation_index)
-
-    last_record_train = train_model(project_name,train_records,train_labels,train_records_end)
-    set_manual_labels(project_name,2,train_ids) #Do not need to be processed anymore
-
-    new_records_ids,new_records,_,_,_ = load_records_eval_set(project_name,"NULL",0)
-    new_records = new_records[:new_predictions]
-    train_records_end = load_config_field(project_name,"manual_annotations")
-    print(f"Last record train val: {last_record_train}")
-    make_prediction(project_name,new_records,new_records_ids)
+def handle_new_record(project_name,manual_labels,record_id,evaluation_threshold=0,evaluation_percentage=0):
+        # Function called when a new record is processed (manually annotated)
+        # This function decides if the document should be used for training or evaluation
+        ids,_,_,_,_ = load_records_eval_set(project_name,eval_set=0,manual_process=1)
+        on_training = load_config_field(project_name,"onTraining")
+        num_records_trained = load_config_field(project_name,"numRecordsToTrain")
+        if record_id < evaluation_threshold:
+            allocate_to_eval = 0
+        allocate_to_eval =  (1 if random.randint(1, 100) <= evaluation_percentage else 0)
+        if(allocate_to_eval == 0):
+            
+            save_config_field(project_name,"numRecordsToTrain",num_records_trained+1)
+        manual_process(project_name,manual_labels,record_id,allocate_to_eval) 
+        if(num_records_trained >= 10 and not on_training):
+            process_new_records(project_name)
 
 
-    print("Retrieve evaluation records...")
-    eval_ids, eval_records, eval_manual_labels,_,_ = load_records_eval_set(project_name,1,2)
+def process_new_records(project_name,new_predictions=100,suplementary_records=False,suplementary_labels=False):
+    # Process new records everything is done from the database
+    # If supplementary documents are provided the evaluation will also be done on these documents
+    train_model(project_name)
+    make_prediction(project_name,num_predictions=new_predictions)
+
+    # Load all documents that need to be evaluate
+    _, eval_records, eval_manual_labels,_,_ = load_records_eval_set(project_name,1,2)
     if(len(eval_records)>1):
-        print("Launch evaluation of the model...")
-        print(evaluate_model(project_name,eval_records,eval_manual_labels))
-    train_records_end = load_config_field(project_name,"manual_annotations")
+        evaluate_model(project_name,eval_records,eval_manual_labels,complete_evaluation=False)
+    if(suplementary_records):
+        evaluate_model(project_name,suplementary_records,suplementary_labels,complete_evaluation=True)
 
 if __name__ == "__main__":
     args = parse_arguments()

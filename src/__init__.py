@@ -1,5 +1,6 @@
 from .create_project import create_project_from_scratch
-from .train import predict_and_align, train_model
-from .prediction import make_prediction
+from .train import train_model
+from .prediction import make_prediction, predict_and_align
 from .evaluation import evaluate_model
-from .process_new_records import process_new_records
+from .process_new_records import process_new_records, handle_new_record
+from .fake_manual_annotation import fake_manual_annotation_best_confidence, fake_manual_annotation

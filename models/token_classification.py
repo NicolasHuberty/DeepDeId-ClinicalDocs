@@ -13,16 +13,13 @@ def tokenize_and_encode_labels(labels, tokens, label2id):
     simplified_labels = [[label2id.get(label, label2id['O']) for label in doc] for doc in labels]
     encoded_labels = []
     for i, label in enumerate(simplified_labels):
-        word_ids = tokens.word_ids(batch_index=i)  # Get word id for each token
+        word_ids = tokens.word_ids(batch_index=i)
         previous_word_idx = None
         label_ids = [] 
-        # Assign labels to tokens, using -100 for sub-tokens and special tokens
         for word_idx in word_ids:
             if word_idx is None:  # Special tokens
                 label_ids.append(-100)
             elif word_idx != previous_word_idx:  # New word
-                #print(f"Label ids: {label_ids}")
-                #print(f"Label: {label} and word_idx: {word_idx}")
                 label_ids.append(label[word_idx])
             else:  # Sub-token of a previous word
                 label_ids.append(-100)
