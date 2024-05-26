@@ -4,5 +4,4 @@ datasets/unformatted/*
 .trainingLogs
 models_save/
 docs
-results/
 !datasets/formatted/wikiNER
