@@ -1,21 +1,40 @@
 import sqlite3
 import json
 
+def validate_json(json_data):
+    # Check validity of the JSON file
+    try:
+        json.loads(json_data) 
+        return True
+    except json.JSONDecodeError:
+        return False
+
 def load_config_field(project_name, field):
-    with open(f"projects/{project_name}/config_project.json", 'r') as file:
-        json_data = json.load(file)
-    field_value = json_data.get(field, None)
-    return field_value
+    # Load a specific field value from a project JSON configuration file
+    config_path = f"projects/{project_name}/config_project.json"
+    with open(config_path, 'r') as file:
+        json_data = file.read()
+    if validate_json(json_data):
+        data_dict = json.loads(json_data)
+        field_value = data_dict.get(field, None)
+        return field_value
+    else:
+        return None
 
 
 def save_config_field(project_name, field, new_value):
+    # Modify a specific field in a project JSON configuration file.
     config_file_path = f"projects/{project_name}/config_project.json"
-    # Load the current configuration
     with open(config_file_path, 'r') as file:
-        json_data = json.load(file)
-    json_data[field] = new_value
-    with open(config_file_path, 'w') as file:
-        json.dump(json_data, file, indent=4) 
+        json_data = file.read()
+    if validate_json(json_data):
+        data_dict = json.loads(json_data)
+        data_dict[field] = new_value
+        # Validate the modified dictionary by converting it back to JSON string
+        new_json_data = json.dumps(data_dict, indent=4)
+        if validate_json(new_json_data):
+            with open(config_file_path, 'w') as file:
+                file.write(new_json_data)
 
 
 
@@ -69,7 +88,7 @@ def manual_process(project_name, manual_labels, record_id,allocate_to_eval = Fal
     # Update the manual_labels when annotating
     conn = sqlite3.connect(f'./projects/{project_name}/dataset.db')
     c = conn.cursor()
-    c.execute('UPDATE records SET manual_labels=?, manual_process=1, eval_record=? WHERE id=?', (manual_labels, allocate_to_eval, record_id))
+    c.execute('UPDATE records SET manual_labels=?, manual_process=1, eval_record=? WHERE id=?', (','.join(manual_labels), allocate_to_eval, record_id))
     conn.commit()
     conn.close()
 

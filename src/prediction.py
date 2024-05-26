@@ -5,12 +5,12 @@ import numpy as np
 from tqdm import tqdm
 import torch
 import torch.nn.functional as F
-from transformers import RobertaTokenizerFast,  BertTokenizerFast, BertForTokenClassification
+from transformers import RobertaTokenizerFast,  BertTokenizerFast, BertForTokenClassification,AutoTokenizer,AutoModelForTokenClassification
 # Add root path to system path
 root_path = Path(__file__).resolve().parents[1]
 sys.path.append(str(root_path))
-sys.path.append("datasets")
-from utils import store_predicted_labels, load_config_field, load_records_eval_set
+sys.path.append("dataset")
+from utils import store_predicted_labels, load_config_field, load_records_eval_set,load_model_and_tokenizer
 from models import RobertaCustomForTokenClassification
 import logging
 from load_dataset import load_txt_dataset,load_dataset
@@ -79,10 +79,13 @@ def make_prediction(project_name,num_predictions=100):
     id2label = load_config_field(project_name,"id2label")
     model_path = load_config_field(project_name,"model_path")
     tokenizer_path = load_config_field(project_name,"tokenizer_path")  
-    tokenizer = RobertaTokenizerFast.from_pretrained(tokenizer_path)
-    model = RobertaCustomForTokenClassification.from_pretrained(model_path)
+    #tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-large')
+    #model = AutoModelForTokenClassification.from_pretrained(model_path)
+    #tokenizer = RobertaTokenizerFast.from_pretrained(tokenizer_path)
+    #model = RobertaCustomForTokenClassification.from_pretrained(model_path)
     #tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
     #model = BertForTokenClassification.from_pretrained(model_path, num_labels=len(labels))
+    model,tokenizer = load_model_and_tokenizer(project_name)
     all_aligned_predicted_labels = []
     for document in new_records:
             # Add the prediction of a document

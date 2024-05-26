@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incremental Learning Annotator</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='incrementalIcon.png') }}">
+
+</head>
+    
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div id="sidebar" class="col-md-2 d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <h1 class="my-4">New Project</h1>
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createProjectModal">
+                    Create New Project
+                </button>
+                <h1 class="my-4">All Projects</h1>
+                <div id="projectsList" class="nav flex-column"></div>
+                <h1 class="my-4">Progress</h1>
+                <div id="labelsList" class="mb-3"></div>
+                <div id="progress-and-record-counts" class="mt-auto">
+                    <div id="progress-indicators">
+                        <div>
+                            <strong>Record Progress:</strong>
+                        </div>
+                        <div class="progress">
+                            <div id="unprocessedBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%">Unprocessed</div>
+                            <div id="processedBar" class="progress-bar bg-success" role="progressbar" style="width: 0%">Processed</div>
+                        </div>
+                    </div>
+                
+                    <div id="record-counts">
+                        <div>
+                            <strong>Unprocessed Records:</strong> <span id="unprocessedCount">0</span>
+                            (<span id="unprocessedPercentage">0%</span>)
+                        </div>
+                        <div>
+                            <strong>Processed Records:</strong> <span id="processedCount">0</span>
+                            (<span id="processedPercentage">0%</span>)
+                        </div>
+                    </div>        
+                    <div id="training-progress" class="mt-3">
+                        <div><strong>Training Progress:</strong></div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="trainingProgressBar" class="progress-bar" role="progressbar" style="width: 0%;"></div>
+                        </div>
+                        <div id="trainingProgressText" class="text-center">Training Progress: 0/10</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main role="main" id="mainContent" class="col-md-10 ml-sm-auto col-lg-10 px-4 hidden">
+            <h1 class="mt-5">Project Dashboard</h1>
+            <div class="record-box">
+                <div class="inline-box">
+                    <div class="half-width">
+                        <fieldset class="custom-fieldset">
+                            <legend>Evaluation</legend>
+                            <label for="evaluationFile">Optional Evaluation Set:</label>
+                            <input type="file" class="form-control mb-2" id="evaluationFile" placeholder="Optional Evaluation Set">
+                            <label for="evalPercentage">Evaluation Percentage (%):</label>
+                            <input type="number" class="form-control mb-2" id="evalPercentage" placeholder="Evaluation Percentage (%)" min="0" max="100">
+                            <label for="startFrom">Start Evaluation since Docs #:</label>
+                            <input type="number" class="form-control mb-2" id="startFrom" placeholder="Start Evaluation since" min="0" max="1000">
+                        </fieldset>
+                    </div>
+                    <div class="half-width">
+                        <fieldset class="custom-fieldset">
+                            <legend>Training</legend>
+                            <label for="trainingSteps">Training Steps:</label>
+                            <input type="number" class="form-control mb-2" id="trainingSteps" placeholder="Training Steps">
+                            <label for="numPred">Number of Predictions:</label>
+                            <input type="number" class="form-control mb-2" id="numPred" placeholder="Number of Predictions">
+                            <button type="button" class="btn btn-primary" id="forceTraining">Force Training</button>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+            <div id="recordViewer" class="record-box">
+                <h2>Record Viewer</h2>
+                <p id="recordText">Select a project and a record to view its details here.</p>
+                <button id="submitAnnotationsButton" class="btn btn-success">Manual Annotation Done</button>
+            </div>
+            <div id="labelsAndMappings" class="my-4">
+                <h2>Labels & Keyboard Mappings</h2>
+                <div id="labelsMappingsContainer"></div>
+            </div>
+            <div id="performancesContainer" class="my-4">
+                <h2>Model Performances</h2>
+                <div id="performancesDisplay"></div>
+            </div>
+            <div id="plotF1Scores"></div>
+            <div id="plotMacroAvg"></div>
+            <div id="plotConfidence"></div>
+        </main>
+        
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" role="dialog" aria-labelledby="createProjectModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createProjectModalLabel">New Project</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="projectNameCreation" class="form-control mb-2" placeholder="Project Name">
+        <input type="text" id="projectLabelsCreation" class="form-control mb-2" placeholder="Comma-separated labels">
+        <div class="custom-file mb-3">
+            <input type="file" class="custom-file-input" id="projectFileCreation" name="fileUpload" multiple>
+            <label class="custom-file-label" for="projectFileCreation">Choose file</label>
+            
+        </div>
+        <h2>Evaluation</h2>
+        <div class="custom-file mb-3">
+            <input type="file" class="custom-file-input" id="evaluationFileCreation" name="fileUpload" multiple>
+            <label class="custom-file-label" for="evaluationFileCreation">Optional Evaluation Set</label>
+            
+        </div>
+        <div class="form-group">
+            <label for="evalPercentageCreation">Evaluation Percentage (%):</label>
+            <input type="number" step="1" min="0" max="100" class="form-control" id="evalPercentageCreation" value="30">
+        </div>
+        <div class="form-group">
+            <label for="evalStartAtCreation">Start Evaluation since:</label>
+            <input type="number" step="5" min="0" max="1000" class="form-control" id="evalStartAtCreation" value="60">
+        </div>
+        <h2>Training</h2>
+        <div class="form-group">
+            <label for="trainingStepsCreation">Training Steps:</label>
+            <input type="number" class="form-control" id="trainingStepsCreation" value="5">
+        </div>
+        <div class="form-group">
+            <label for="numPredictionsCreation">Number of Predictions:</label>
+            <input type="number" class="form-control" id="numPredictionsCreation" value="50">
+        </div>
+        <div class="form-group">
+            <label for="modelNameCreation">Model Name:</label>
+            <select class="form-control" id="modelNameCreation">
+                <option value="mBERT">mBERT</option>
+                <option value="RoBERTa">RoBERTa</option>
+                <option value="camemBERT">camemBERT</option>
+                <option value="xlm-roberta">XLM-RoBERTa</option>
+            </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span id="loadingText" class="mr-auto" style="display:none;">The project is being created...</span>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="createProject">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script type="module" defer src="static/js/stateManager.js"></script>
+<script type="module" defer src="static/js/api.js"></script>
+<script type="module" defer src="static/js/main.js"></script>
+</body>
+</html>

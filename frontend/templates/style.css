@@ -1,0 +1,97 @@
+#sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000; /* Increased z-index to ensure it's on top */
+    width: 200px; /* Adjust based on your design */
+    overflow-y: auto; /* Adds scroll to sidebar if content overflows */
+    background-color: #FFFFFF; /* Just an example, adjust the color as needed */
+}
+.container-fluid, .row {
+    height: 100%; /* Ensures that these parent elements take full height */
+}
+#sidebar .nav-link {
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.record-box {
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+#projectsList .btn {
+    width: 100%;
+    text-align: left;
+}
+
+#mainContent {
+    padding-top: 1rem;
+}
+.label {
+    display: inline-block;
+    margin: 0 5px;
+    border-radius: 10px;
+    padding: 5px 10px;
+    background: #007bff;
+    color: white;
+}
+.token-label {
+    border-radius: 5px;
+    padding: 2px 5px;
+    margin: 2px;
+    display: inline-block;
+}
+.token-label-O {
+    background-color: transparent;
+    color: #FFFFFF; 
+}
+.highlighted-text {
+    background: linear-gradient(to top, green 50%, transparent 50%);
+    text-decoration: underline;
+}
+#progress-and-record-counts {
+    margin-top: auto; /* Pushes the div to the bottom */
+    padding-bottom: 20px; /* Add some space at the bottom */
+}
+.performance-entry {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.label-name {
+    font-weight: bold;
+}
+
+.f1-score {
+    float: right;
+    color: #007bff;
+}
+.performance-bar-container {
+    margin: 10px 0;
+}
+
+.performance-bar {
+    display: inline-block;
+    color: white;
+    text-align: right;
+    padding: 5px;
+    border-radius: 5px;
+}
+.label-mapping {
+    display: inline-flex;
+    align-items: center; 
+    justify-content: center; 
+    margin: 5px;
+    padding: 5px 8px; 
+    border-radius: 15px; 
+    white-space: nowrap; 
+    flex-shrink: 0;
+}

@@ -2,10 +2,11 @@ import sys
 from pathlib import Path
 import argparse
 import sqlite3
+import random
 root_path = Path(__file__).resolve().parents[1]
 sys.path.append(str(root_path))
 from utils import load_record_with_lowest_confidence
-
+from src import handle_new_record
 def parse_arguments():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Simulate manual_annotations')
@@ -25,14 +26,15 @@ def fake_manual_annotation(project_name, num_records):
         c.execute('''SELECT MAX(id) FROM records WHERE manual_process = 2''')
         max_id_result = c.fetchone()
         start_id = max_id_result[0] if max_id_result[0] is not None else 0
-
         # Retrieve new documents that will be annotated
-        c.execute('''SELECT id FROM records WHERE id > ? ORDER BY id LIMIT ?''', (start_id, num_records))
+        c.execute('''SELECT id, manual_labels FROM records WHERE id > ? ORDER BY id LIMIT ?''', (start_id, num_records))
         record_ids = c.fetchall()
-        for record_id in record_ids:
-            c.execute('''UPDATE records SET manual_process = 1, eval_record = 0 WHERE id = ?''', (record_id[0],))
         conn.commit()
         conn.close()
+        for record in record_ids:
+            #modified_labels = [label if label == 'O' or random.random() >= 0.00 else 'O' for label in record[1].split(',')]
+            handle_new_record(project_name,record[2],record[0])
+
 
     except sqlite3.OperationalError as e:
         print(f"SQLite Operational Error while simulate annotation: {e}")
@@ -40,19 +42,13 @@ def fake_manual_annotation(project_name, num_records):
 
 def fake_manual_annotation_best_confidence(project_name, num_records):
     # Annotate the num_records documents on the database based on their confidence percentage
-    try:
-        conn = sqlite3.connect(f'./projects/{project_name}/dataset.db')
-        c = conn.cursor()
-        # Retrieve lowest confidence document and update its processed status
-        for _ in range(num_records):
-            record = load_record_with_lowest_confidence(project_name)
-            record_id = record[0]
-            c.execute('''UPDATE records SET manual_process = 1, eval_record = 0 WHERE id = ?''', (record_id,))
-            conn.commit()
+    # Retrieve lowest confidence document and update its processed status
+    for _ in range(num_records):
+        record = load_record_with_lowest_confidence(project_name)
+        print(record)
+        handle_new_record(project_name,','.join(record[2]),int(record[0]))
+        #handle_new_record(project_name,record[2],int(record[0]))
 
-        conn.close()
-    except sqlite3.OperationalError as e:
-        print(f"SQLite Operational Error while simulate annotation with lowest confidence: {e}")
         
 def main():
     args = parse_arguments()

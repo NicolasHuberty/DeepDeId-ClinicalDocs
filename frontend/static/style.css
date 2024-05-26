@@ -1,0 +1,73 @@
+.record-box {
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+#projectsList .btn {
+    width: 100%;
+    text-align: left;
+}
+#mainContent {
+    padding-left: 1rem;
+}
+#sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    width: 350px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+}
+.half-width {
+    width: 50%;
+}
+.inline-box {
+    display: flex;
+    justify-content: space-between;
+}
+.custom-fieldset {
+    border: 1px solid #007bff;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.custom-fieldset legend {
+    width: auto;
+    padding: 0 10px;
+    font-size: 16px;
+    color: #007bff;
+}
+.hidden {
+    display: none;
+}
+body {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+#performancesContainer {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#performancesContainer h2 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+#performancesContainer p {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+#performancesDisplay {
+    font-family: 'Arial', sans-serif;
+}

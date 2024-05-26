@@ -1,4 +1,7 @@
-datasets/
+dataset/unformatted/*
+dataset/formatted/*
+!dataset/formatted/wikiNER
+project_save/
 *.pyc
 .trainingLogs
 models_save/

@@ -4,6 +4,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 
+"""
+Custom Token classification model based on RoBERTa.
+
+Parameters:
+- num_labels (int): Number of labels for the classification task.
+- config (RobertaConfig, optional): Configuration object for the RoBERTa model. If None, defaults are loaded.
+"""
 class RobertaCustomForTokenClassification(nn.Module):
     def __init__(self, num_labels, config=None):
         super(RobertaCustomForTokenClassification, self).__init__()
@@ -17,6 +24,18 @@ class RobertaCustomForTokenClassification(nn.Module):
         self.classifier = nn.Linear(self.config.hidden_size, self.config.num_labels)
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, threshold=0.5):
+        """
+        Receives the tokenized informations and do all the computations
+        
+        Parameters:
+        - input_ids (Tensor): Indices of input sequence tokens in the vocabulary.
+        - attention_mask (Tensor, optional): Mask to avoid performing attention on padding token indices.
+        - labels (Tensor, optional): Labels for computing the loss when training.
+        - threshold (float): Threshold for converting probabilities to binary predictions.
+        
+        Returns:
+        - dict: Containing the loss, logits, and predicted labels.
+        """
         outputs = self.roberta(input_ids=input_ids, attention_mask=attention_mask)
         logits = self.classifier(outputs[0])
         
@@ -33,6 +52,7 @@ class RobertaCustomForTokenClassification(nn.Module):
     
     @classmethod
     def from_pretrained(cls, pretrained_dir, *model_args, **kwargs):
+        # Load a model and its configuration from a predefined directory
         config = RobertaConfig.from_pretrained(pretrained_dir)
         model = cls(config.num_labels, config=config)
         model_path = os.path.join(pretrained_dir, 'pytorch_model.bin')
@@ -41,6 +61,7 @@ class RobertaCustomForTokenClassification(nn.Module):
         return model
     
     def save_pretrained(self, save_directory):
+        # Save the model and its configuration to a specified directory
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
         config_path = os.path.join(save_directory, 'config.json')
