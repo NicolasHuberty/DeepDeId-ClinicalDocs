@@ -13,7 +13,6 @@ sys.path.append("dataset")
 from utils import  store_record_with_labels,save_config_field
 import logging
 from load_dataset import load_dataset,load_txt_dataset
-
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 def parse_arguments():
     # Parse command line arguments

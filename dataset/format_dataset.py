@@ -1,7 +1,8 @@
 import os
 import xml.etree.ElementTree as ET
 import re
-
+import sys
+from pathlib import Path
 def save_formatted(filePath,formattedLines):
     print(f"Save dataset format in a new file...")
     filePath = filePath.replace("unformatted","formatted")

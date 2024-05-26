@@ -1,16 +1,22 @@
 import sys
 from pathlib import Path
+import argparse
 # Add root path to system path
 root_path = Path(__file__).resolve().parents[1]
 sys.path.append(str(root_path))
 from src import fake_manual_annotation, fake_manual_annotation_best_confidence
 from src import process_new_records
-from load_dataset import load_txt_dataset,load_dataset
 import numpy as np
+
+parser = argparse.ArgumentParser(description='Create a Project from scratch to identify specific labels on documents')
+parser.add_argument("--project_name", type=str, default="wikiNER", help="Name of the Project")
+parser.add_argument("--steps",type=int,default=10,help="Number of documents process at each step")
+parser.add_argument("--to",type=int,default=500,help="Number of documents annotation to simulate")
+
+args = parser.parse_args()
 # Launch simulation of ILA when a project is correctly created
-vals =  np.full(30, 10)
-project_name = "mails"
+vals =  np.full(int(args.to)/int(args.steps), args.steps)
 for i in vals:
     print(f"Handle i {i}")
-    fake_manual_annotation_best_confidence(project_name,i)
-    process_new_records(project_name)
+    fake_manual_annotation_best_confidence(args.project_name,i)
+    process_new_records(args.project_name)
