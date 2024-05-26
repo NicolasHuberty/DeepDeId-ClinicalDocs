@@ -2,13 +2,15 @@ import sys
 from pathlib import Path
 import argparse
 import pandas as pd
-from transformers import Trainer, TrainingArguments, RobertaTokenizerFast,  BertTokenizerFast, BertForTokenClassification
+from transformers import Trainer, TrainingArguments, RobertaTokenizerFast,  BertTokenizerFast, BertForTokenClassification,CamembertTokenizerFast, CamembertForTokenClassification
+from transformers import AutoTokenizer, XLMRobertaForTokenClassification, AutoModelForTokenClassification, XLMRobertaConfig, FlaubertForTokenClassification, FlaubertTokenizer, CamembertConfig
 # Add root path to system path
 root_path = Path(__file__).resolve().parents[1]
 sys.path.append(str(root_path))
 from utils import readFormattedFile, CustomDataset, evaluate_model, plot_f1
 from models import tokenize_and_encode_labels, RobertaCustomForTokenClassification
 import logging
+import matplotlib.pyplot as plt
 
 # Remove TensorFlow logging
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
@@ -21,7 +23,9 @@ def parse_arguments():
     parser.add_argument('--epochs', type=int, default=5, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=4, help='Training batch size')
     parser.add_argument('--mapping',type=str, default="n2c2_removeBIO", help="None for no mapping, name of the file otherwise")
-    parser.add_argument('--dataset_size',type=str,default=720)
+    parser.add_argument('--dataset_size',type=str,default=-1)
+    parser.add_argument('--variant_name',type=str,default="roberta")
+    parser.add_argument('--transfer_learning_path',type=str,default="None",help="Enable transfer Learning")
     args = parser.parse_args()
     return args
 
@@ -43,17 +47,37 @@ def process_training_set(args):
 
 def initialize_model_and_tokenizer(unique_labels_train, train_dataset_string, args):
     """Initialize the tokenizer and the model"""
-    tokenizer = RobertaTokenizerFast.from_pretrained("Jean-Baptiste/roberta-large-ner-english")
-    model = RobertaCustomForTokenClassification(num_labels=len(unique_labels_train))
-    #tokenizer = BertTokenizerFast.from_pretrained("bert-base-multilingual-cased")
-    #model = BertForTokenClassification.from_pretrained("bert-base-multilingual-cased", num_labels=len(unique_labels_train))
-    model.config.name = f"roberta-{train_dataset_string}_{args.dataset_size}-mapping_{args.mapping}-epochs_{args.epochs}-batch_size_{args.batch_size}"
+    if(args.variant_name == "roberta"):
+        tokenizer = RobertaTokenizerFast.from_pretrained("Jean-Baptiste/roberta-large-ner-english")
+        if(args.transfer_learning_path != "None"):
+            model = RobertaCustomForTokenClassification(args.transfer_learning_path)
+        else:
+            model = RobertaCustomForTokenClassification(num_labels=len(unique_labels_train))
+    elif(args.variant_name == "mbert"):
+        tokenizer = BertTokenizerFast.from_pretrained("bert-base-multilingual-uncased")
+        if(args.transfer_learning_path) != "None":
+            model = BertForTokenClassification.from_pretrained(args.transfer_learning_path)
+        else:
+            model = BertForTokenClassification.from_pretrained("bert-base-multilingual-uncased",num_labels=len(unique_labels_train))
+    elif(args.variant_name == "xlm"):
+        tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-large')
+        if(args.transfer_learning_path) != "None":
+            model = AutoModelForTokenClassification.from_pretrained(args.transfer_learning_path)
+        else:
+            model = AutoModelForTokenClassification.from_pretrained('xlm-roberta-large',num_labels=len(unique_labels_train))
+    else:
+        tokenizer = AutoTokenizer.from_pretrained("dccuchile/bert-base-spanish-wwm-uncased")
+        if(args.transfer_learning_path) != "None":
+            model = AutoModelForTokenClassification.from_pretrained("dccuchile/bert-base-spanish-wwm-uncased", num_labels=len(unique_labels_train))
+        else:
+            model = AutoModelForTokenClassification.from_pretrained(args.transfer_learning_path)
+    model.config.name = f"{args.variant_name}-{train_dataset_string}_{args.dataset_size}-mapping_{args.mapping}-epochs_{args.epochs}-batch_size_{args.batch_size}"
     model.config.label2id = {label: id for id, label in enumerate(unique_labels_train)}
     model.config.id2label = {id: label for label, id in model.config.label2id.items()}
     return model, tokenizer
 
 def tokenize_and_process_labels(tokens, labels, tokenizer, model):
-    """Tokenize and process labels for training and evaluation set."""
+    """Tokenize and process labels for training and evaluation set"""
     print(f"Tokenize the tokens and process labels...")
     tokenized_train_inputs = tokenizer(tokens,max_length=512, padding="max_length", truncation=True, is_split_into_words=True, return_tensors="pt")
     encoded_train_labels = tokenize_and_encode_labels(labels, tokenized_train_inputs,model.config.label2id)
@@ -62,32 +86,16 @@ def tokenize_and_process_labels(tokens, labels, tokenizer, model):
 def define_training_parameters(args):
     """Define training parameters."""
     training_args = TrainingArguments(
-        save_strategy="no",
         output_dir="./.trainingLogs",
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
+        save_strategy="no",
+        logging_dir="./logs",  # Path to store the log files
+        logging_strategy="steps",  # Log at regular step intervals
+        logging_steps=10  # Log metrics every 10 steps
     )
     return training_args
 
-def output_aligned_data_to_conllu(aligned_data, file_path="results/aligned_output.conllu"):
-    with open(file_path, "w", encoding="utf-8") as f:
-        for sentence in aligned_data:
-            for token, label in sentence:
-                f.write(f"{token}\t{label}\n")
-            f.write("\n")
-
-def align_predictions_with_tokens(tokenized_inputs, predictions, tokenizer):
-    aligned_token_label_pairs = []
-    for idx, input_ids in enumerate(tokenized_inputs["input_ids"]):
-        decoded_tokens = tokenizer.convert_ids_to_tokens(input_ids, skip_special_tokens=False)
-        labels = predictions[idx]
-        aligned_sentence = []
-        for token, label in zip(decoded_tokens, labels):
-            if token in tokenizer.all_special_tokens:
-                continue
-            aligned_sentence.append((token, label))
-        aligned_token_label_pairs.append(aligned_sentence)
-    return aligned_token_label_pairs
 
 def evaluate_and_save(model,tokenizer, args):
     """Evaluate the performance of the model and save the results."""
@@ -98,9 +106,6 @@ def evaluate_and_save(model,tokenizer, args):
     eval_dataset = CustomDataset(tokenized_eval_inputs, encoded_eval_labels)
 
     metrics = evaluate_model(model, eval_dataset,'cuda',tokenizer)
-    aligned_data = align_predictions_with_tokens(tokenized_eval_inputs, metrics['predicted_labels_sequences'], tokenizer)
-    print(aligned_data[0])
-    output_aligned_data_to_conllu(aligned_data)
     # Format performances to be fit in csv file
     df_metrics = pd.DataFrame({
         'Support': pd.Series(metrics['support_per_label']),
@@ -112,19 +117,19 @@ def evaluate_and_save(model,tokenizer, args):
         'Recall': pd.Series(metrics['recall_per_label']),
         'F1 Score': pd.Series(metrics['f1_per_label']),
     })
-    
+
     # Save results
     df_metrics.index = [label for _, label in sorted(model.config.id2label.items())]
     print(f"df_metrics.index: {df_metrics.index}")
-    df_metrics.to_csv(f"./results/{model.config.name}.csv", index_label='Label ID')
+    df_metrics.to_csv(f"results/{model.config.name}.csv", index_label='Label ID')
 
     # Plot results
-    print(f"Plot performance metrics...")
-    plot_f1(metrics, [label for _, label in sorted(model.config.id2label.items())],model.config.name)
+    #print(f"Plot performance metrics...")
+    #plot_f1(metrics, [label for _, label in sorted(model.config.id2label.items())],model.config.name)
 
 def main():
     args = parse_arguments()
-    print(f"Launch training with bert-base-uncased with: {args.train_set} eval set: {args.eval_set} epochs: {args.epochs} batch size: {args.batch_size}")
+    print(f"Launch training with args.variant_name with: {args.train_set} eval set: {args.eval_set} epochs: {args.epochs} batch size: {args.batch_size}")
     tokens, labels, unique_labels_train, train_dataset_string = process_training_set(args)
     model, tokenizer = initialize_model_and_tokenizer(unique_labels_train, train_dataset_string, args)
     tokenized_train_inputs, encoded_train_labels = tokenize_and_process_labels(tokens, labels, tokenizer, model)
@@ -139,12 +144,15 @@ def main():
     )
     print(f"Launch the training for {args.epochs} epochs...")
     trainer.train()
-    
     # Save the model
     print(f"Save the model {model.config.name}")
-    trainer.save_model(f"models_save/{model.config.name}")
+    if(args.variant_name == "roberta"):
+        model.save_pretrained(f"models_save/{model.config.name}")
+    else:
+        trainer.save_model(f"models_save/{model.config.name}")
     if(args.eval_set != "None"):
         evaluate_and_save(model,tokenizer, args)
 
+
 if __name__ == "__main__":
-    main()
+        main()

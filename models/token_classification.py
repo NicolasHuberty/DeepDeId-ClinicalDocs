@@ -1,18 +1,21 @@
 def tokenize_and_encode_labels(labels, tokens, label2id):
     """
-    This function adjusts labels to align with tokenized inputs, using the special token `-100` 
-    to indicate sub-tokens or tokens that should not be considered for training (e.g., special tokens like [CLS], [SEP]).
-    Args:
-        labels (list of list of str): Original labels for each token in each sentence.
-        tokens: Tokenizer output, must have `word_ids` method to map tokens to their original words.
-        label2id (dict): Mapping from label strings to label IDs.
+    This function maps textual labels to their respective IDs and aligns them with tokens,
+    especially accounting for tokenization effects like sub-tokenization and special tokens
+
+    Parameters:
+    - labels (list of list of str): List of documents where each document is a list of labels
+    - tokens: Tokenizer output that contains mappings between tokens and their corresponding word in the input
+    - label2id (dict): Dictionary mapping label names to an integer ID
+
     Returns:
-        list of list of int: Encoded labels adjusted for sub-tokens and special tokens.
+    - encoded_labels (list of list of int): Encoded labels aligned with tokenizer output, where
+      sub-tokens and special tokens get a special ID of -100 to ignore in loss computation
     """
     # Convert labels to their corresponding IDs
     simplified_labels = [[label2id.get(label, label2id['O']) for label in doc] for doc in labels]
     encoded_labels = []
-    #Iterate over each document's labels
+    # Iterate over each document's labels
     for i, label in enumerate(simplified_labels):
         word_ids = tokens.word_ids(batch_index=i)  # Get word id for each token
         previous_word_idx = None

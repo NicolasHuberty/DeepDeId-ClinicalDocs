@@ -57,7 +57,7 @@ def dataset_statistics(tokens, labels, unique_labels):
     total_tokens = sum(len(sentence) for sentence in tokens)
     total_labels = len(set(all_labels))
     label_distribution = {label: all_labels.count(label) for label in unique_labels}
-    
+    print(f"Number of documents: {len(tokens)}")
     print(f"Total number of tokens: {total_tokens}")
     print(f"Total number of unique labels: {total_labels}")
     print(f"Label distribution:{label_distribution}")
@@ -70,3 +70,4 @@ def dataset_statistics(tokens, labels, unique_labels):
     plt.title('Distribution of Labels in the Dataset')
     plt.xticks(rotation=45)
     #plt.show()
+    return label_distribution
