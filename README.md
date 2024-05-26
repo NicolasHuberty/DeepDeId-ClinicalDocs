@@ -89,7 +89,7 @@ All performances of the model are present in the folder of the project.
 
  3. **Train the model**
     ```bash
-    python train.py --project_name wikiNER
+    python src/train.py --project_name wikiNER
     ```
 
     This function will launch the training of the model.
@@ -97,21 +97,21 @@ All performances of the model are present in the folder of the project.
 
  4. **Run predictions**
     ```bash
-    python prediction.py --project_name wikiNER --num_records 100
+    python src/prediction.py --project_name wikiNER --num_records 100
     ```
 
     This code will predict the next 100 documents of the project.
 
  5. **Evaluate model performance**
     ```bash
-    python evaluation.py
+    python src/evaluation.py
     ```
 
  ## Evaluation
 
  Evaluate the performance of the trained models using the `evaluation.py` script.
     ```bash
-    python evaluation.py --project_name wikiNER --supplementary_dataset dataset/formatted/wikiNER/test.tsv
+    python src/evaluation.py --project_name wikiNER --supplementary_dataset dataset/formatted/wikiNER/test.tsv
     ```
 
 This file will evaluate the model using the supplementary dataset instead of using the records dedicated for evaluation. If the supplementary_dataset need to systematically used, it is needed to manually integrate it from the config.json file, otherwise it can be added from the webUI.
@@ -119,7 +119,7 @@ This file will evaluate the model using the supplementary dataset instead of usi
 If no annotated files exist this code will retrieve all evaluation records coming from the annotation process.
 
 ```bash
-python evaluation.py --project_name wikiNER
+python src/evaluation.py --project_name wikiNER
 ```
  ## Plot Results
 
@@ -128,7 +128,16 @@ python evaluation.py --project_name wikiNER
 ```bash
 python plotResults.py
 ```
+
 It is manual, it is needed to manually adapt the path of the results to use.
+ ## Typical Results
+
+ Below are images that show typical results for model performance achieved with ILA Tool
+ ![Model Performance Training](results/plots/plot1-n2c2_2014.png "Model Training Performance")
+
+ ![Model Performance Validation](results/plots/plot1-n2c2.png "Model Validation Performance")
+
+ ![Model Performance Testing](results/plots/plot1-wikiNER.png "Model Testing Performance")
 
  ## Acknowledgements
 
