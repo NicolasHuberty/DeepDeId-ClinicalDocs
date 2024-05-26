@@ -13,7 +13,8 @@
  3. [Training](#training)
  4. [Evaluation](#evaluation)
  5. [Transfer Learning](#transfer-learning)
- 6. [Acknowledgements](#acknowledgements)
+ 6. [Plot Results](#plot-results)
+ 7. [Acknowledgements](#acknowledgements)
 
  ## Installation
 
@@ -109,6 +110,25 @@ For transfer learning, you need to define an other argument --transfer_learning_
 python src/main.py --train_set wikiNER/train.tsv --eval_set wikiNER/test.tsv --epochs 5 --batch_size 4 --mapping None --dataset_size -1 --variant_name roberta --transfer_learning_path roberta-i2b2_2006_-1-mapping_None-epochs_5-batch_size_4
 ```
 
- ## Acknowledgements
+# Plot Results
+To plot all results, you can use this call function
+```bash
+python .\src\plot_performances.py --model_path roberta-n2c2_-1-mapping_n2c2_removeBIO-epochs_5-batch_size_4
+```
+In this example, that provides these plots
+
+<div style="text-align: center;">
+    <img src="results/plots/labelsF1-n2c2.png" width="70%" alt="Labels F1">
+</div>
+<table>
+<tr>
+    <td><img src="results/plots/confusionMatrix-roberta-n2c2.png" alt="Confusion Matrix" style="width:80%;"></td>
+    <td><img src="results/plots/macro-n2c2.png" alt="Macro Avg F1" style="width:100%;"></td>
+</tr>
+</table>
+
+
+# Acknowledgements
 
  This project was conducted as part of a master's thesis at UCLouvain, 2024. Special thanks to my supervisor, assistant, and the research community for their support and contributions.
+
