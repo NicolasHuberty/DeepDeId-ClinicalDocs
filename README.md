@@ -12,9 +12,8 @@
  2. [Dataset Preparation](#dataset-preparation)
  3. [Training](#training)
  4. [Evaluation](#evaluation)
- 5. [Usage](#usage)
- 6. [Files Description](#files-description)
- 7. [Acknowledgements](#acknowledgements)
+ 5. [Transfer Learning](#transfer-learning)
+ 6. [Acknowledgements](#acknowledgements)
 
  ## Installation
 
@@ -45,9 +44,13 @@
  The datasets used in this project should be placed in the `datasets/formatted` directory. Ensure that the datasets are properly formatted according to the required structure.
 
  1. **Format the datasets**
+### Supported Input Formats
+- **CoNLL-U**: A format used for annotated datasets in NLP tasks, particularly for named entity recognition.
+- **XML**: An XML-based format for annotated clinical documents.
+- **BRAT**: A format originating from the BRAT annotation tool, used for named entity recognition tasks.
+- **TSV**: Tab-separated values format, which aligns each word with its corresponding label.
 
  Use the provided `formatDataset.py` script to convert datasets into the required format.
- Actually, conllu, xml, brat or tsv files can be formatted.
 
 ```bash
 python datasets/formatDataset.py --input_path path/to/raw_datasets --output_path datasets/formatted
@@ -57,9 +60,9 @@ The dataset statistics can be explored using this file:
 ```bash
 python src/dataset_statistics.py --datasets_path wikiNER/train.tsv wikiNER/test.tsv
 ```
+This command should give plots, all supports and statistics.
 
-This command should give plots like here accompagnied by all supports and statistics.
- 2. **Define Mappings**
+2. **Define Mappings**
 
 If the labels definition is not what you expected, you can map your own labels and place the file in the mapping folder with name like name_mapping.json
 Here is an example of correct JSON mapping file:
@@ -77,7 +80,7 @@ Here is an example of correct JSON mapping file:
 ```
  ## Training
 
- To train and evaluatethe deep learning models for de-identification, follow these steps:
+ To train and evaluate the deep learning models for de-identification, follow these steps:
 
 ```bash
 python src/main.py --train_set wikiNER/train.tsv --eval_set wikiNER/test.tsv --epochs 5 --batch_size 4 --mapping None --dataset_size -1 --variant_name roberta
