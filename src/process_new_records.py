@@ -1,4 +1,5 @@
-import sys
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.import sys
 from pathlib import Path
 import argparse
 import random
@@ -7,7 +8,7 @@ root_path = Path(__file__).resolve().parents[1]
 sys.path.append(str(root_path))
 from utils import load_records_eval_set, load_config_field, save_config_field, manual_process
 from src import train_model, make_prediction,evaluate_model
-from load_dataset import load_txt_dataset,load_dataset
+from all_datasets import load_txt_dataset,load_dataset
 
 def parse_arguments():
     # Parse command line arguments
@@ -19,7 +20,6 @@ def parse_arguments():
 def handle_new_record(project_name,manual_labels,record_id):
         # Function called when a new record is processed (manually annotated)
         # This function decides if the document should be used for training or evaluation
-        print("handle new record has been called")
         #ids,_,_,_,_ = load_records_eval_set(project_name,eval_set=0,manual_process=1)
         #on_training = load_config_field(project_name,"onTraining")
         num_records_trained = load_config_field(project_name,"numRecordsToTrain")
@@ -43,7 +43,6 @@ def process_new_records(project_name):
     num_records_trained = load_config_field(project_name,"numRecordsToTrain")
     training_steps = load_config_field(project_name,"trainingSteps")
     on_training = load_config_field(project_name,"onTraining")
-    print(f"Train the model if {num_records_trained} is >= {training_steps} and not on training: {on_training}")
     if(num_records_trained  >= training_steps and not on_training):
         force_process(project_name)
 

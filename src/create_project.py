@@ -1,3 +1,5 @@
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.
 import sys
 from pathlib import Path
 import argparse
@@ -12,13 +14,13 @@ sys.path.append(str(root_path))
 sys.path.append("dataset")
 from utils import  store_record_with_labels,save_config_field
 import logging
-from load_dataset import load_dataset,load_txt_dataset
+from all_datasets import load_dataset,load_txt_dataset
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 def parse_arguments():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Create a Project from scratch to identify specific labels on documents')
     parser.add_argument("--project_name", type=str, default="n2c2", help="Name of the Project")
-    parser.add_argument('--dataset', type=str, default="datasets/formatted/n2c2_2014/training1Map.tsv", help='Dataset to label with .tsv file supported')
+    parser.add_argument('--dataset', type=str, default="all_datasets/formatted/n2c2_2014/training1Map.tsv", help='Dataset to label with .tsv file supported')
     parser.add_argument('--labels', nargs="+", default=["PERSON","LOCATION","DATE","ID"],help="Label to identify on documents")
     parser.add_argument("--model_name", type=str, default="roberta", help="Model that will be used (roberta, mBERT,camembert, xml-roberta)")
     parser.add_argument("--eval_percentage", type=int, default=30, help="Percentage of the documents that will be reserved for evaluation")

@@ -1,3 +1,5 @@
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.
 import sys
 from pathlib import Path
 import argparse
@@ -15,7 +17,7 @@ parser.add_argument("--to",type=int,default=500,help="Number of documents annota
 
 args = parser.parse_args()
 # Launch simulation of ILA when a project is correctly created
-vals =  np.full(int(args.to)/int(args.steps), args.steps)
+vals =  np.full(int(int(args.to)/int(args.steps)), args.steps)
 for i in vals:
     print(f"Handle i {i}")
     fake_manual_annotation_best_confidence(args.project_name,i)

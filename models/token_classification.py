@@ -1,3 +1,5 @@
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.
 def tokenize_and_encode_labels(labels, tokens, label2id):
     """
     This function adjusts labels to align with tokenized inputs, using the special token `-100` 

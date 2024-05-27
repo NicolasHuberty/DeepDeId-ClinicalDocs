@@ -5,19 +5,20 @@
 
  This repository contains the work of a master's thesis conducted at UCLouvain in 2024, focusing on the de-identification of clinical documents through the application of deep learning techniques. This project developed a robust system capable of automatically detecting protected health information (PHI) within clinical documents, thus preserving patient confidentiality while enabling the utilization of clinical data for research purposes.
 
-[![ILA Demo](https://i9.ytimg.com/vi/PJTIBT_-VHk/mqdefault.jpg?sqp=CKT4zbIG-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGGUgZShlMA8=&rs=AOn4CLD_0_xNbOkYX6pn5jQPYzVxmiVzPg)](https://youtu.be/PJTIBT_-VHk "Demo of the ILA")
+[![ILA Demo](https://i9.ytimg.com/vi/PJTIBT_-VHk/mqdefault.jpg?sqp=CKSF0rIG-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGGUgZShlMA8=&rs=AOn4CLAD4zs8mEmf3GErZ50dBXjgK6NRRg)](https://youtu.be/PJTIBT_-VHk "Demo of the ILA")
 
 
- ## Table of Contents
+## Table of Contents
 
- 1. [Installation](#installation)
- 2. [Dataset Preparation](#dataset-preparation)
- 3. [Usage](#usage)
-     - [Using the Manager](#using-the-manager)
-     - [Manual Execution](#manual-execution)
- 4. [Evaluation](#evaluation)
- 5. [Plot Results](#plot-results)
- 6. [Acknowledgements](#acknowledgements)
+1. [Installation](#installation)
+2. [Dataset Preparation](#dataset-preparation)
+3. [Usage](#usage)
+   - [Using the WebUI](#using-the-webui)
+   - [Using the Manager](#using-the-manager)
+   - [Manual Execution](#manual-execution)
+4. [Evaluation](#evaluation)
+5. [Plot Results](#plot-results)
+6. [Acknowledgements](#acknowledgements)
 
  ## Installation
 
@@ -47,37 +48,59 @@
 - **BRAT**: A format originating from the BRAT annotation tool, used for named entity recognition tasks.
 - **TSV**: Tab-separated values format, which aligns each word with its corresponding label.
 
- The datasets used in this project should be placed in the `datasets/formatted` directory. Ensure that the datasets are properly formatted according to the required structure, then adapt all the fields to redirect to your unformatted dataset in dataset/formatDataset.py file.
+ The datasets used in this project should be placed in the `all_datasets/formatted` directory. Ensure that the datasets are properly formatted according to the required structure, then adapt all the fields to redirect to your unformatted dataset in dataset/formatDataset.py file.
  1. **Format the datasets**
     ```bash
-    python formatDataset.py
+    python all_datasets/formatDataset.py
     ```
+ 2. **Test with wikiNER dataset**
 
+   The script `create_wikiNER_dataset.py` processes and formats the wikiNER dataset.
+   
+   **Dataset URL**: [wikiner dataset](https://metatext.io/datasets/wikiner)
+   
+   **Citation**:
+   Joel Nothman et al., "Learning Multilingual Named Entity Recognition from Wikipedia," 
+   *Artificial Intelligence*, vol. 194, pp. 151-175, Jan 2013, DOI: [10.1016/j.artint.2012.03.006](https://linkinghub.elsevier.com/retrieve/pii/S0004370212000276).
+   
+
+   ```bash
+   python create_wikiNER_dataset.py
+   ```
  ## Usage
+ 
+ ### Using the WebUI
 
+To use the Web Interface to annotate completely a dataset only this command has to be run, and everything can be done from the WebUI.
+
+```bash
+python frontend/app.py
+```
  ### Using the Manager
 
  To simplify the operation, use the project management script:
 
  1. **Create the project and automatically manage files**
-    ```bash
-    python src/create_project.py --project_name wikiNER --dataset dataset/formatted/wikiNER/train.tsv --labels PERSON LOCATION DATE ID --model_name roberta --eval_percentage 30 --training_steps 10 --num_predictions 50 --start_from 20
-    ```
+   ```bash
+   python src/create_project.py --project_name wikiNER --dataset all_datasets/formatted/wikiNER/test.tsv --labels PERSON LOCATION DATE ID --model_name roberta --eval_percentage 30 --training_steps 10 --num_predictions 50 --start_from 20
+   ```
+
 This creation of project will create a new folder in projects/ containing the configuration file, the database and the potential supplementary evaluation set.
 
  2. **Simulate project operation**
-    ```bash
-    python simulation.py --steps 10 --to 500
-    ```
+   ```bash
+   python simulation.py --project_name wikiNER --steps 10 --to 500
+   ```
 This code will simulate the annotation process of 500 documents with a step size of 10.
 All performances of the model are present in the folder of the project.
+
  ### Manual Execution
 
  All functions of the project can be called separately without using the manager.
 
  1. **Create project structure**
     ```bash
-    python src/create_project.py --project_name wikiNER --dataset dataset/formatted/wikiNER/train.tsv --labels PERSON LOCATION DATE ID --model_name roberta --eval_percentage 30 --training_steps 10 --num_predictions 50 --start_from 20
+    python src/create_project.py --project_name wikiNER --dataset all_datasets/formatted/wikiNER/train.tsv --labels PERSON LOCATION DATE ID --model_name roberta --eval_percentage 30 --training_steps 10 --num_predictions 50 --start_from 20
     ```
 
  2. **Simulate manual annotations**

@@ -1,3 +1,5 @@
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.
 import sys
 from pathlib import Path
 import argparse
@@ -13,7 +15,7 @@ sys.path.append("dataset")
 from utils import store_predicted_labels, load_config_field, load_records_eval_set,load_model_and_tokenizer
 from models import RobertaCustomForTokenClassification
 import logging
-from load_dataset import load_txt_dataset,load_dataset
+from all_datasets import load_txt_dataset,load_dataset
 # Remove TensorFlow logging
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 

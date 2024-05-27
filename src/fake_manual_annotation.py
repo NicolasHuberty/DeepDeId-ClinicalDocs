@@ -1,3 +1,5 @@
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.
 import sys
 from pathlib import Path
 import argparse
@@ -45,9 +47,7 @@ def fake_manual_annotation_best_confidence(project_name, num_records):
     # Retrieve lowest confidence document and update its processed status
     for _ in range(num_records):
         record = load_record_with_lowest_confidence(project_name)
-        print(record)
         handle_new_record(project_name,','.join(record[2]),int(record[0]))
-        #handle_new_record(project_name,record[2],int(record[0]))
 
         
 def main():
