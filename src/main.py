@@ -1,7 +1,10 @@
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.
 import sys
 from pathlib import Path
 import argparse
 import pandas as pd
+import torch
 from transformers import Trainer, TrainingArguments, RobertaTokenizerFast,  BertTokenizerFast, BertForTokenClassification,CamembertTokenizerFast, CamembertForTokenClassification
 from transformers import AutoTokenizer, XLMRobertaForTokenClassification, AutoModelForTokenClassification, XLMRobertaConfig, FlaubertForTokenClassification, FlaubertTokenizer, CamembertConfig
 # Add root path to system path
@@ -50,7 +53,7 @@ def initialize_model_and_tokenizer(unique_labels_train, train_dataset_string, ar
     if(args.variant_name == "roberta"):
         tokenizer = RobertaTokenizerFast.from_pretrained("Jean-Baptiste/roberta-large-ner-english")
         if(args.transfer_learning_path != "None"):
-            model = RobertaCustomForTokenClassification(args.transfer_learning_path)
+            model = RobertaCustomForTokenClassification.from_pretrained(args.transfer_learning_path)
         else:
             model = RobertaCustomForTokenClassification(num_labels=len(unique_labels_train))
     elif(args.variant_name == "mbert"):
@@ -104,8 +107,8 @@ def evaluate_and_save(model,tokenizer, args):
     tokenized_eval_inputs = tokenizer(eval_tokens,max_length=512, padding="max_length", truncation=True, is_split_into_words=True, return_tensors="pt")
     encoded_eval_labels = tokenize_and_encode_labels(eval_labels, tokenized_eval_inputs,model.config.label2id)
     eval_dataset = CustomDataset(tokenized_eval_inputs, encoded_eval_labels)
-
-    metrics = evaluate_model(model, eval_dataset,'cuda',tokenizer)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    metrics = evaluate_model(model, eval_dataset, device,tokenizer)
     # Format performances to be fit in csv file
     df_metrics = pd.DataFrame({
         'Support': pd.Series(metrics['support_per_label']),

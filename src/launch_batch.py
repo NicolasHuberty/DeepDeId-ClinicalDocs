@@ -1,3 +1,5 @@
+# This file is part of DeepDeId-ClinicalDocs project and is released under the GNU General Public License v3.0.
+# See "LICENSE" for more information or visit https://www.gnu.org/licenses/gpl-3.0.html.
 import subprocess
 import numpy as np
 mappings = ["n2c2_removeBIO","None","n2c2_BIO","n2c2"]

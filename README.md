@@ -23,14 +23,14 @@
  1. **Clone the repository**
 
     ```bash
-    git clone https://github.com/NicolasHuberty/DeepDeId-ClinicalDocs/tree/evaluation
+    git clone --branch evaluation --single-branch https://github.com/NicolasHuberty/DeepDeId-ClinicalDocs.git
     cd DeepDeId-ClinicalDocs
     ```
 
  2. **Create a virtual environment**
 
     ```bash
-    python3 -m venv venv
+    python -m venv venv
     source venv/bin/activate
     ```
 
@@ -56,6 +56,14 @@
 ```bash
 python datasets/formatDataset.py --input_path path/to/raw_datasets --output_path datasets/formatted
 ```
+For the next commands example, we provided the wikiNER dataset to test all the commands on this dataset.
+**Dataset URL**: [wikiner dataset](https://metatext.io/datasets/wikiner)
+
+**Citation**:
+Joel Nothman et al., "Learning Multilingual Named Entity Recognition from Wikipedia," 
+*Artificial Intelligence*, vol. 194, pp. 151-175, Jan 2013, DOI: [10.1016/j.artint.2012.03.006](https://linkinghub.elsevier.com/retrieve/pii/S0004370212000276).
+
+
 The dataset statistics can be explored using this file:
 
 ```bash
@@ -84,15 +92,12 @@ Here is an example of correct JSON mapping file:
  To train and evaluate the deep learning models for de-identification, follow these steps:
 
 ```bash
-python src/main.py --train_set wikiNER/train.tsv --eval_set wikiNER/test.tsv --epochs 5 --batch_size 4 --mapping None --dataset_size -1 --variant_name roberta
+python src/main.py --train_set wikiNER/train.tsv --eval_set wikiNER/test.tsv --epochs 5 --batch_size 4 --mapping None --dataset_size 100 --variant_name mbert
 ```
 
  You can customize the training parameters by specifying additional arguments and place your dataset path instead of wikiNER.
- 
- This python command will create a folder 
-```bash
- models_save/roberta-wikiNER_-1-mapping_None-epochs_5-batch_size_4
-```
+ Different models such as roberta,bert or camembert can be used instead of mbert.
+ This python command will create a folder in `models_save/mbert-wikiNER_100-mapping_None-epochs_5-batch_size_4` and a result file here: `results/mbert-wikiNER_100-mapping_None-epochs_5-batch_size_4.csv`
 
 
  ## Evaluation
@@ -100,22 +105,22 @@ python src/main.py --train_set wikiNER/train.tsv --eval_set wikiNER/test.tsv --e
  Evaluate the performance of the trained models using the `evaluation.py` script.
 
 ```bash
-python evaluation.py --eval_set wikiNER/test.tsv --batch_size 4 --mapping None --variant_name roberta --model_path roberta-wikiNER_-1-mapping_None-epochs_5-batch_size_4
+python src/evaluation.py --eval_set wikiNER/test.tsv --batch_size 4 --mapping None --variant_name mbert --model_path mbert-wikiNER_100-mapping_None-epochs_5-batch_size_4
 ```
-
+ This file will evaluate the performances of an existing model, this evaluation is already done from the main execution.
 # Transfer Learning
 For transfer learning, you need to define an other argument --transfer_learning_path that redirect to the model folder
     
 ```bash
-python src/main.py --train_set wikiNER/train.tsv --eval_set wikiNER/test.tsv --epochs 5 --batch_size 4 --mapping None --dataset_size -1 --variant_name roberta --transfer_learning_path roberta-i2b2_2006_-1-mapping_None-epochs_5-batch_size_4
+python src/main.py --train_set wikiNER/train.tsv --eval_set wikiNER/test.tsv --epochs 5 --batch_size 4 --mapping None --dataset_size 100 --variant_name mbert --transfer_learning_path models_save/mbert-wikiNER_100-mapping_None-epochs_5-batch_size_4
 ```
-
+This command will create a new folder `models_save/mbert-wikiNER_100-mapping_None-epochs_5-batch_size_4_wikiNER`
 # Plot Results
 To plot all results, you can use this call function
 ```bash
-python .\src\plot_performances.py --model_path roberta-n2c2_-1-mapping_n2c2_removeBIO-epochs_5-batch_size_4
+python src/plot_performances.py --model_path mbert-wikiNER_100-mapping_None-epochs_5-batch_size_4
 ```
-In this example, that provides these plots
+That provides plots like here
 
 <div style="text-align: center;">
     <img src="results/plots/labelsF1-n2c2.png" width="70%" alt="Labels F1">

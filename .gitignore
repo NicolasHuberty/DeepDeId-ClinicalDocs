@@ -5,3 +5,5 @@ datasets/unformatted/*
 models_save/
 docs
 !datasets/formatted/wikiNER
+venv/
+logs/
