@@ -3,6 +3,7 @@
 from pathlib import Path
 import argparse
 import random
+import sys
 # Add root path to system path
 root_path = Path(__file__).resolve().parents[1]
 sys.path.append(str(root_path))

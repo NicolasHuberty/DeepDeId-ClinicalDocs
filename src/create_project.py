@@ -72,6 +72,7 @@ def get_pastel_color():
 def create_project_from_scratch(project_name, dataset, labels_name, model_name,eval_percentage,training_steps,num_predictions,start_from):
     # Create all configurations and database for the project
     projects_root = Path(__file__).resolve().parent.parent / 'projects'
+    os.makedirs(projects_root, exist_ok=True)
     project_dir = projects_root / project_name
     os.makedirs(project_dir, exist_ok=True) 
     

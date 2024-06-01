@@ -23,7 +23,7 @@ def parse_arguments():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Predict documents to help manual annotations')
     parser.add_argument("--project_name", type=str, default="customProject", help="Name of the Project")
-    parser.add_argument("--num_evals", type=int, default=100, help="Number of records to predict")
+    parser.add_argument("--num_records", type=int, default=100, help="Number of records to predict")
     args = parser.parse_args()
     return args
 

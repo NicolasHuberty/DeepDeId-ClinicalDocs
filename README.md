@@ -32,7 +32,7 @@
 
  2. **Create a virtual environment**
      ```bash
-     python3 -m venv venv
+     python -m venv venv
      source venv/bin/activate
      ```
 
@@ -127,7 +127,7 @@ All performances of the model are present in the folder of the project.
 
  5. **Evaluate model performance**
     ```bash
-    python src/evaluation.py
+    python src/evaluation.py --project_name wikiNER
     ```
 
  ## Evaluation

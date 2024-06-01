@@ -89,7 +89,7 @@ def main():
     project_name = args.project_name
 
     # Retrieve documents that need to be evaluated and evaluate the model
-    if(args.supplementary_dataset):
+    if(args.supplementary_dataset != "None"):
         records,labels = load_dataset(args.supplementary_dataset)
         evaluate_model(project_name,records,labels,True)
     else:
