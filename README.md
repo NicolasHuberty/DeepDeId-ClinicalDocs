@@ -5,7 +5,8 @@
 
  This repository contains the work of a master's thesis conducted at UCLouvain in 2024, focusing on the de-identification of clinical documents through the application of deep learning techniques. This project developed a robust system capable of automatically detecting protected health information (PHI) within clinical documents, thus preserving patient confidentiality while enabling the utilization of clinical data for research purposes.
 
-[![ILA Demo](https://i9.ytimg.com/vi/PJTIBT_-VHk/mqdefault.jpg?sqp=CKSF0rIG-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGGUgZShlMA8=&rs=AOn4CLAD4zs8mEmf3GErZ50dBXjgK6NRRg)](https://youtu.be/PJTIBT_-VHk "Demo of the ILA")
+Youtuve Video Demo is available here:
+[![ILA Demo](results/plots/youtubeVideo.png)](https://youtu.be/PJTIBT_-VHk "Demo of the ILA")
 
 
 ## Table of Contents
