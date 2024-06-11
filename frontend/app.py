@@ -174,7 +174,6 @@ def process_record(project_name):
 # Create a new project from uploaded files
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    print("On create project")
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     project_name = request.form['projectName']
     project_dir = os.path.join(BASE_DIR, "projects", project_name)
@@ -201,7 +200,7 @@ def create_project():
         eval_file.save(eval_file_path)
 
     # Assuming the existence of these helper functions
-    create_project_from_scratch(project_name, file_path, request.form['labels'].split(','))
+    create_project_from_scratch(project_name, file_path, request.form['labels'].split(','),request.form['modelName'],request.form["evalPercentage"],request.form["trainingSteps"],request.form["numPredictions"],request.form["evalStartAt"])
     save_config_field(project_name, "evalPercentage", float(request.form.get("evalPercentage", 0)))
     training_steps = int(request.form.get("trainingSteps", 5))
     num_predictions = int(request.form.get("numPredictions", 50))
